@@ -26,14 +26,35 @@ const labOfHex = h => lab(...hex2rgb(h));
 const toHex = (r, g, b) => "#" + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, "0")).join("").toUpperCase();
 
 /* ── 상품 검색 ──────────────────────────────────────────────── */
-async function search(keyword, limit) {
+/* 쿠팡 검색은 limit 최대가 10이다. 넘기면 "limit is out of range" 로
+   0건이 온다. 더 많은 후보가 필요하면 키워드를 나눠 여러 번 부른다. */
+const CP_MAX = 10;
+async function searchOnce(keyword, limit) {
   const r = await fetch(WORKER, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ provider: "coupang", keyword, limit: limit || 20 })
+    body: JSON.stringify({ provider: "coupang", keyword, limit: Math.min(limit || CP_MAX, CP_MAX) })
   });
   const d = await r.json();
   if (d.error) throw new Error(d.error);
-  return ((d.data || {}).data || {}).productData || [];
+  const body = d.data || {};
+  if (String(body.rCode) !== "0")
+    throw new Error("쿠팡: " + (body.rMessage || body.rCode));
+  return (body.data || {}).productData || [];
+}
+async function search(keyword, want) {
+  const keys = Array.isArray(keyword) ? keyword : [keyword];
+  const seen = new Set(), out = [];
+  for (const k of keys) {
+    let items = [];
+    try { items = await searchOnce(k, CP_MAX); } catch (e) { continue; }
+    for (const p of items) {
+      const id = p.productId || p.productUrl;
+      if (seen.has(id)) continue;
+      seen.add(id); out.push(p);
+    }
+    if (out.length >= (want || CP_MAX)) break;
+  }
+  return out;
 }
 
 /* ── 썸네일에서 옷 색 추출 ──────────────────────────────────
@@ -89,7 +110,7 @@ function loadImage(url) {
  */
 async function match(keyword, targets, opt) {
   opt = opt || {};
-  const items = await search(keyword, opt.pool || 24);
+  const items = await search(keyword, opt.pool || 20);
   const tl = targets.map(t => ({ ...t, lab: labOfHex(t.hex) }));
   const out = [];
   const batch = 6;
