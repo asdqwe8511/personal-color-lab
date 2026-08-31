@@ -149,6 +149,112 @@ function sizes(m, system) {
   return out;
 }
 
+/* ── 마네킹(드레스폼) 렌더러 ─────────────────────────────────
+ * 실측 둘레를 폭으로 환산해 재단용 드레스폼 형태로 그린다.
+ * 크기가 아니라 '형태'를 비교하는 그림이므로 폭을 기준으로 정규화한다.
+ * 그래야 키가 다른 사람의 체형끼리도 나란히 놓고 볼 수 있다.
+ */
+function formProfile(m) {
+  const w = c => c / CIRC_TO_WIDTH / 2;          // 둘레(cm) → 반폭(cm)
+  const sh = m.shoulder / 2;
+  return [
+    [0.00, w(m.neck || m.bust * 0.40) * 1.05],   // 목
+    [0.035, sh * 0.78],                          // 어깨 경사 — 없으면 모서리가 각진다
+    [0.105, sh],                                 // 어깨끝
+    [0.175, sh * 0.93],                          // 암홀
+    [0.30, w(m.bust)],                           // 가슴
+    [0.43, w(m.bust * 0.86)],                    // 언더버스트
+    [0.58, w(m.waist)],                          // 허리
+    [0.81, w(m.hip)],                            // 엉덩이
+    [1.00, w(m.hip * 0.94)]                      // 밑단
+  ];
+}
+
+/* 각 점에서 접선이 세로가 되도록 잇는다 — 몸의 곡선이 각지지 않게 */
+function sideCurve(pts, cx, y0, sy, sx, sign) {
+  let d = "";
+  pts.forEach((pt, i) => {
+    const x = cx + sign * pt[1] * sx, y = y0 + pt[0] * sy;
+    if (i === 0) { d += "M" + x.toFixed(1) + " " + y.toFixed(1); return; }
+    const q = pts[i - 1];
+    const px = cx + sign * q[1] * sx, py = y0 + q[0] * sy, dy = (y - py) * 0.42;
+    d += " C" + px.toFixed(1) + " " + (py + dy).toFixed(1) +
+         " " + x.toFixed(1) + " " + (y - dy).toFixed(1) +
+         " " + x.toFixed(1) + " " + y.toFixed(1);
+  });
+  return d;
+}
+
+let _uid = 0;
+function mannequinSVG(m, opt) {
+  opt = opt || {};
+  const W = opt.width || 220, H = opt.height || 320;
+  const stand = opt.stand !== false, seams = opt.seams !== false;
+  const uid = "mq" + (++_uid);
+  const pts = formProfile(m);
+  const maxHalf = Math.max.apply(null, pts.map(p => p[1]));
+  const formH = stand ? H * 0.74 : H * 0.94;
+  const sx = (W * (opt.labels ? 0.30 : 0.36)) / maxHalf;               // 폭 기준 정규화
+  const sy = formH;
+  const cx = W / 2, y0 = H * 0.03;
+  const yBot = y0 + sy;
+
+  const right = sideCurve(pts, cx, y0, sy, sx, 1);
+  const left = sideCurve(pts.slice().reverse(), cx, y0, sy, sx, -1);
+  const body = right + " L" + (cx - pts[pts.length - 1][1] * sx).toFixed(1) + " " + yBot.toFixed(1) +
+               " " + left.replace(/^M[^C]*/, "") + " Z";
+
+  const at = t => y0 + t * sy;
+  const halfAt = t => {
+    for (let i = 0; i < pts.length - 1; i++) {
+      if (t <= pts[i + 1][0]) {
+        const k = (t - pts[i][0]) / (pts[i + 1][0] - pts[i][0]);
+        const e = k * k * (3 - 2 * k);
+        return (pts[i][1] + (pts[i + 1][1] - pts[i][1]) * e) * sx;
+      }
+    }
+    return pts[pts.length - 1][1] * sx;
+  };
+
+  const P = [];
+  P.push('<defs><linearGradient id="' + uid + '" x1="0" y1="0" x2="1" y2="0">' +
+    '<stop offset="0" stop-color="var(--accent)" stop-opacity=".07"/>' +
+    '<stop offset=".34" stop-color="var(--accent)" stop-opacity=".13"/>' +
+    '<stop offset="1" stop-color="var(--accent)" stop-opacity=".30"/></linearGradient></defs>');
+
+  if (stand) {
+    const poleTop = yBot - 2, poleBot = H * 0.94;
+    P.push('<rect x="' + (cx - 2.5) + '" y="' + poleTop + '" width="5" height="' + (poleBot - poleTop) +
+      '" fill="var(--ink-3)" opacity=".55"/>');
+    P.push('<ellipse cx="' + cx + '" cy="' + poleBot + '" rx="' + (W * 0.16) + '" ry="' + (W * 0.035) +
+      '" fill="var(--ink-3)" opacity=".38"/>');
+  }
+  P.push('<path d="' + body + '" fill="url(#' + uid + ')" stroke="var(--accent)" stroke-width="' +
+    (opt.thin ? 1.2 : 1.8) + '" stroke-linejoin="round"/>');
+  // 목 개구부 — 드레스폼의 특징
+  P.push('<ellipse cx="' + cx + '" cy="' + at(0) + '" rx="' + halfAt(0) + '" ry="' + (halfAt(0) * 0.42) +
+    '" fill="var(--surface)" stroke="var(--accent)" stroke-width="' + (opt.thin ? 1 : 1.4) + '"/>');
+
+  if (seams) {
+    P.push('<line x1="' + cx + '" y1="' + at(0.04) + '" x2="' + cx + '" y2="' + at(0.99) +
+      '" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 3" opacity=".5"/>');
+    [[0.30, "가슴"], [0.58, "허리"], [0.81, "엉덩이"]].forEach(([t, ko]) => {
+      const h = halfAt(t), y = at(t);
+      P.push('<path d="M' + (cx - h) + ' ' + y + ' Q' + cx + ' ' + (y + h * 0.16) + ' ' + (cx + h) + ' ' + y +
+        '" fill="none" stroke="var(--accent)" stroke-width="1" opacity=".55"/>');
+      if (opt.labels) P.push('<text class="figlab" x="' + (cx + h + 6) + '" y="' + (y + 3) + '">' + ko + '</text>');
+    });
+  }
+  return P.join("");
+}
+
+/* 기준점 비율만으로 마네킹을 그리기 위한 대표 치수 */
+function protoMeasure(key) {
+  const q = PROTO[key], hip = 95;
+  const waist = hip * q.WH, bust = waist * q.BW;
+  return { hip, waist, bust, shoulder: (hip / CIRC_TO_WIDTH) * q.SH, neck: bust * 0.40 };
+}
+
 /* ── 선택 입력이 있을 때만 나오는 핏 메모 ───────────────────── */
 function fitNotes(m) {
   const out = [];
@@ -209,4 +315,5 @@ function validate(m) {
   return errs;
 }
 
-export { FIELDS, REQUIRED, PROTO, SHAPES, classify, ratios, sizes, fitNotes, validate, CIRC_TO_WIDTH };
+export { FIELDS, REQUIRED, PROTO, SHAPES, classify, ratios, sizes, fitNotes, validate,
+         CIRC_TO_WIDTH, mannequinSVG, protoMeasure };
