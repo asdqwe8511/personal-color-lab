@@ -104,6 +104,23 @@ function loadImage(url) {
   });
 }
 
+/* ── 성별 필터 ──────────────────────────────────────────────
+ * 쿠팡 검색은 키워드만 보므로 "여성 니트"에 남성 상품이 섞인다.
+ * 상품명으로 걸러낸다. 남녀공용은 어느 쪽이든 남긴다.
+ */
+const RE_UNI = /(남녀공용|공용|유니섹스|unisex)/i;
+const RE_MEN = /(남성|남자|맨즈|men)/i;
+const RE_WOMEN = /(여성|여자|우먼|women)/i;
+function genderOk(name, want) {
+  if (!want || want === "any") return true;
+  const n = String(name || "");
+  if (RE_UNI.test(n)) return true;
+  const men = RE_MEN.test(n), women = RE_WOMEN.test(n);
+  if (want === "women") return women || !men;   // 남성 표기가 있고 여성 표기가 없으면 제외
+  if (want === "men") return men || !women;
+  return true;
+}
+
 /* ── 매칭 ───────────────────────────────────────────────────
  * targets: [{hex, name}]  처방 팔레트
  * 각 상품을 팔레트 중 가장 가까운 색과의 ΔE 로 평가한다.
@@ -116,6 +133,7 @@ async function match(keyword, targets, opt) {
   const batch = 6;
   for (let i = 0; i < items.length; i += batch) {
     await Promise.all(items.slice(i, i + batch).map(async p => {
+      if (!genderOk(p.productName, opt.gender)) return;
       const im = await loadImage(p.productImage);
       if (!im) return;
       const rgb = garmentColor(im);
@@ -136,4 +154,4 @@ async function match(keyword, targets, opt) {
   return out.slice(0, opt.want || 8);
 }
 
-export { match, search, garmentColor, loadImage, dE, lab, labOfHex, toHex, WORKER };
+export { match, search, garmentColor, loadImage, genderOk, dE, lab, labOfHex, toHex, WORKER };

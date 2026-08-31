@@ -290,10 +290,19 @@ function render(){
   /* 실제 상품 — 카테고리로 검색하고 색은 이미지에서 잰다 */
   const neck = (N.good[0] || "").replace("대부분의 목선", "");
   const botKey = (S.bottom.split(",")[0].split("·")[0] || "").trim();
-  const CATS = [
-    { label:"니트",   keys:[neck ? neck+" 니트" : "여성 니트", "니트 스웨터"] },
+  /* 체형 페이지에서 고른 사이즈 체계를 성별로 이어받는다 */
+  const gender = body.system === "men" ? "men" : "women";
+  const G = gender === "men" ? "남성" : "여성";
+  const CATS = gender === "men" ? [
+    { label:"니트",   keys:[neck ? neck+" 니트" : "남성 니트", "남성 스웨터"] },
+    { label:"티셔츠", keys:["남성 티셔츠", "남성 반팔티"] },
+    { label:"하의",   keys:[botKey ? "남성 "+botKey+" 팬츠" : "남성 팬츠", "남성 슬랙스"] },
+    { label:"셔츠",   keys:["남성 셔츠"] },
+    { label:"아우터", keys:["남성 자켓"] }
+  ] : [
+    { label:"니트",   keys:[neck ? neck+" 니트" : "여성 니트", "여성 니트 스웨터"] },
     { label:"티셔츠", keys:[neck ? neck+" 티셔츠" : "여성 티셔츠", "여성 반팔티"] },
-    { label:"하의",   keys:[botKey ? botKey+" 팬츠" : "여성 팬츠", "여성 슬랙스"] },
+    { label:"하의",   keys:[botKey ? "여성 "+botKey+" 팬츠" : "여성 팬츠", "여성 슬랙스"] },
     { label:"원피스", keys:["여성 원피스"] },
     { label:"아우터", keys:["여성 자켓"] }
   ];
@@ -307,7 +316,7 @@ function render(){
     for (const cat of CATS){
       st.textContent = cat.label + " 찾는 중…";
       let rows = [];
-      try { rows = await shopMatch(cat.keys, palette, { pool:20, want:6 }); }
+      try { rows = await shopMatch(cat.keys, palette, { pool:20, want:6, gender }); }
       catch(e){ rows = []; }
       if (!rows.length) continue;
       found += rows.length;
@@ -325,7 +334,7 @@ function render(){
         "</div>";
       box.appendChild(sec);
     }
-    st.textContent = found ? found + "개 상품을 찾았습니다. ΔE 가 작을수록 처방 색에 가깝습니다."
+    st.textContent = found ? found + "개 상품 · " + G + "복 기준 · ΔE 가 작을수록 처방 색에 가깝습니다."
                            : "상품을 찾지 못했습니다. 잠시 후 다시 시도해 주세요.";
     this.disabled = false;
   };
