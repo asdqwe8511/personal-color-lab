@@ -47,6 +47,14 @@
 .outfits{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px}
 .outfit{border:1px solid var(--rule); border-radius:3px; background:var(--surface); overflow:hidden}
 .outfit .figure{background:var(--surface-2); border-bottom:1px solid var(--rule); padding:6px 0}
+.aiwrap{padding:9px 10px; border-bottom:1px solid var(--rule); display:flex;
+  flex-direction:column; gap:6px; background:var(--surface-2)}
+.aiwrap .btn{justify-content:center; font-size:12.5px; padding:6px 10px}
+.aiwrap .ai-note{font-size:11px; color:var(--ink-3); line-height:1.45; text-align:center}
+.aiwrap img{width:100%; display:block; border-radius:2px}
+.aiwrap .de{display:flex; gap:5px; align-items:center; justify-content:center;
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--ink-3)}
+.aiwrap .de i{width:11px; height:11px; border-radius:2px; border:1px solid var(--rule-2)}
 .outfit .figure svg{display:block; width:100%; height:auto; max-height:300px}
 .outfit .look{display:flex; height:96px}
 .outfit .look i{flex:1; display:block}
@@ -194,9 +202,11 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
-import { neutrals, NECK, SILHOUETTE, FABRIC, patternFor, outfits, queries, SHOPS } from "./assets/style.js";
+import { neutrals, NECK, SILHOUETTE, FABRIC, patternFor, outfits, queries, SHOPS,
+         outfitPrompt } from "./assets/style.js";
 import { dressedSVG, BOTTOM_TYPE } from "./assets/dress.js";
-import { match as shopMatch } from "./assets/shop.js";
+import { match as shopMatch, lab as sLab, labOfHex as sLabHex, dE as sDE,
+         toHex as sToHex, WORKER } from "./assets/shop.js";
 
 const $ = id => document.getElementById(id);
 function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show");
@@ -277,15 +287,81 @@ function render(){
   const dressOpt = { skin: color.skin, hair: color.hairColor,
                      neckline: N.good[0], bodyKey: body.key,
                      bottom: BOTTOM_TYPE[body.key] };
-  $("outfits").innerHTML = outfits(best, season).map(o =>
+  const OUTFITS = outfits(best, season);
+  $("outfits").innerHTML = OUTFITS.map((o, oi) =>
     '<div class="outfit">' +
     (bm ? '<div class="figure"><svg viewBox="0 0 200 420" role="img" aria-label="' + o.name +
       ' 착장">' + dressedSVG(bm, o, Object.assign({ width:200, height:420 }, dressOpt)) + '</svg></div>'
         : '<div class="look">' + o.items.map(it => '<i class="' + (it.role === "포인트" ? "pt" : "") +
           '" style="background:' + it.c.hex + '"></i>').join("") + '</div>') +
+    '<div class="aiwrap" data-i="' + oi + '"><button class="btn ai-go" data-i="' + oi + '">착장 이미지 생성</button>' +
+    '<span class="ai-note"></span></div>' +
     '<div class="body"><h4>' + o.name + '</h4><p class="why">' + o.why + '</p><dl>' +
     o.items.map(it => "<dt>" + it.role + "</dt><dd>" + it.c.name + " " + it.c.hex.toUpperCase() + "</dd>").join("") +
     "</dl></div></div>").join("");
+
+  /* 착장 이미지 — 각자의 팔레트 색으로 그때그때 만든다.
+     고정 이미지를 박으면 남의 색 사진이 뜬다. Workers AI 라 비용은 0원. */
+  const dressOptAI = { neckline: N.good[0], bodyKey: body.key,
+                       bottom: BOTTOM_TYPE[body.key], gender: body.system === "men" ? "men" : "women" };
+  async function measureGarment(url, y0, y1) {
+    const im = await new Promise(r => { const i = new Image();
+      i.crossOrigin = "anonymous"; i.onload = () => r(i); i.onerror = () => r(null); i.src = url; });
+    if (!im) return null;
+    const c = document.createElement("canvas"); c.width = im.width; c.height = im.height;
+    const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(im, 0, 0);
+    let d; try { d = g.getImageData(0, 0, im.width, im.height).data; } catch (e) { return null; }
+    const W = im.width, H = im.height;
+    const corner = [d[0], d[1], d[2]], bgL = sLab(...corner);
+    const px = [];
+    for (let y = Math.round(H * y0); y < H * y1; y += 2)
+      for (let x = Math.round(W * 0.3); x < W * 0.7; x += 2) {
+        const i = (y * W + x) * 4, p = [d[i], d[i + 1], d[i + 2]];
+        if (sDE(sLab(...p), bgL) < 22) continue;          // 배경 제외
+        px.push(p);
+      }
+    if (px.length < 60) return null;
+    px.sort((a, b) => { const la = sLab(...a), lb = sLab(...b);
+      return Math.hypot(lb[1], lb[2]) - Math.hypot(la[1], la[2]); });
+    const core = px.slice(0, Math.floor(px.length * 0.5));
+    return [0, 1, 2].map(k => { const v = core.map(q => q[k]).sort((a, b) => a - b);
+      return v[Math.floor(v.length / 2)]; });
+  }
+
+  document.addEventListener("click", async e => {
+    const b = e.target.closest ? e.target.closest(".ai-go") : null;
+    if (!b) return;
+    const oi = +b.dataset.i, o = OUTFITS[oi];
+    const wrap = b.closest(".aiwrap"), note = wrap.querySelector(".ai-note");
+    b.disabled = true; note.textContent = "생성 중… 5~10초";
+    try {
+      const prompt = outfitPrompt(o, dressOptAI);
+      const r = await fetch(WORKER, { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: "workers-ai", prompt, steps: 8 }) });
+      const d = await r.json();
+      if (!d.images) throw new Error(d.error || "생성 실패");
+      const url = d.images[0];
+      b.remove();
+      const img = new Image(); img.src = url; img.alt = o.name + " 착장 이미지";
+      wrap.insertBefore(img, note);
+      /* 생성된 옷 색을 재서 처방과 얼마나 다른지 그대로 보여준다 */
+      const top = await measureGarment(url, 0.20, 0.34);
+      const bot = await measureGarment(url, 0.50, 0.70);
+      const rows = [];
+      if (top) rows.push(["상의", sToHex(...top), o.items[0].c.hex]);
+      if (bot) rows.push(["하의", sToHex(...bot), o.items[1].c.hex]);
+      note.innerHTML = rows.length
+        ? rows.map(([k, got, want]) =>
+            '<span class="de"><i style="background:' + want + '"></i>→<i style="background:' + got + '"></i>' +
+            k + ' ΔE ' + sDE(sLab(...[1,3,5].map(i=>parseInt(got.substr(i,2),16))), sLabHex(want)).toFixed(1) +
+            '</span>').join("")
+          + '<span style="display:block;margin-top:4px">AI 이미지는 색이 어긋납니다. 정확한 색은 위 도식과 색상 코드입니다.</span>'
+        : "AI 생성 이미지 — 색은 근사치입니다.";
+    } catch (err) {
+      note.textContent = "생성 실패: " + err.message;
+      b.disabled = false;
+    }
+  });
 
   /* 실제 상품 — 카테고리로 검색하고 색은 이미지에서 잰다 */
   const neck = (N.good[0] || "").replace("대부분의 목선", "");

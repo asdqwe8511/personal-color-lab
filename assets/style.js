@@ -28,6 +28,18 @@ function lchHex(L, C, h) {
   return "#" + rgb.map(v => hx2(l2s(v))).join("");
 }
 
+const hex2rgbS = h => [1,3,5].map(i => parseInt(h.substr(i,2),16));
+function labOf(hex){
+  const [r,g,b] = hex2rgbS(hex);
+  const R=s2l(r),G=s2l(g),B=s2l(b);
+  const X=(0.4124564*R+0.3575761*G+0.1804375*B)/Xn;
+  const Y=(0.2126729*R+0.7151522*G+0.0721750*B)/Yn;
+  const Z=(0.0193339*R+0.1191920*G+0.9503041*B)/Zn;
+  const f=t=>t>0.008856?Math.cbrt(t):7.787*t+16/116;
+  const fx=f(X),fy=f(Y),fz=f(Z);
+  return [116*fy-16,500*(fx-fy),200*(fy-fz)];
+}
+
 /* ── 계절별 뉴트럴 ───────────────────────────────────────────
  * 웜 타입에게 순검정, 쿨 타입에게 크림색을 주면 안 된다.
  * 계절 색상 편향을 넣은 저채도 색으로 생성한다.
@@ -143,6 +155,62 @@ function outfits(best, season) {
   ];
 }
 
+/* ── 이미지 생성 프롬프트 ────────────────────────────────────
+ * 색 이름을 영어 일반 색상어로 바꿔 넣는다. 앞선 실험에서
+ * "coral pink"는 ΔE 40.9, "light apricot"은 10.6 이었다 —
+ * 프롬프트의 색 단어가 결과 색을 가장 크게 좌우한다.
+ */
+function enColor(hex) {
+  const L = labOf(hex), C = Math.hypot(L[1], L[2]);
+  let h = Math.atan2(L[2], L[1]) * 180 / Math.PI; if (h < 0) h += 360;
+  const lt = L[0] > 74, dk = L[0] < 40;
+  if (C < 12) return lt ? "off-white" : L[0] > 45 ? "warm grey" : "charcoal black";
+  if (h < 20 || h >= 345) return dk ? "deep burgundy" : lt ? "soft rose pink" : "true red";
+  if (h < 45) return lt ? "pale ivory" : dk ? "chocolate brown" : "light apricot";
+  if (h < 75) return lt ? "cream" : dk ? "dark brown" : "warm camel";
+  if (h < 105) return lt ? "pale lemon" : "mustard yellow";
+  if (h < 165) return dk ? "deep olive" : "sage green";
+  if (h < 215) return lt ? "pale mint" : "teal";
+  if (h < 265) return dk ? "navy blue" : lt ? "sky blue" : "cobalt blue";
+  if (h < 310) return dk ? "deep indigo" : "lavender";
+  return dk ? "wine" : "orchid purple";
+}
+const EN_NECK = {
+  "브이넥": "v-neck", "딥 브이넥": "deep v-neck", "부드러운 브이넥": "soft v-neck",
+  "스쿱넥": "scoop neck", "라운드넥": "round neck", "크루넥": "crew neck",
+  "보트넥": "boat neck", "터틀넥": "turtleneck", "스퀘어넥": "square neck",
+  "카울넥": "cowl neck", "오프숄더": "off-shoulder", "대부분의 목선": "round neck"
+};
+const EN_BODY = {
+  hourglass: "hourglass figure with a clearly defined waist",
+  rectangle: "straight balanced figure",
+  pear: "narrower shoulders with fuller hips",
+  inverted: "broad shoulders with narrower hips",
+  apple: "fuller midsection with a softly defined waist"
+};
+const EN_BOTTOM = {
+  straight: "straight-leg trousers", wide: "wide-leg trousers",
+  bootcut: "bootcut trousers", skinny: "slim trousers", aline: "a-line skirt"
+};
+function outfitPrompt(outfit, opt) {
+  opt = opt || {};
+  const top = enColor(outfit.items[0].c.hex);
+  const bot = enColor(outfit.items[1].c.hex);
+  const neck = EN_NECK[opt.neckline] || "round neck";
+  const bottom = EN_BOTTOM[opt.bottom] || "straight-leg trousers";
+  const bodyDesc = EN_BODY[opt.bodyKey] || "";
+  const who = opt.gender === "men" ? "man" : "woman";
+  return [
+    "editorial full-body fashion photograph of a Korean " + who,
+    "standing straight facing camera",
+    "wearing a " + top + " " + neck + " fine-knit top",
+    "and " + bot + " " + bottom,
+    bodyDesc,
+    "plain pale grey seamless studio backdrop",
+    "soft even lighting, natural realistic proportions, sharp focus, no text"
+  ].filter(Boolean).join(", ");
+}
+
 /* ── 쇼핑 검색어 ─────────────────────────────────────────────
  * 처방을 실제 검색으로 옮긴다. 제휴 계정이 생기면 이 링크가 제휴 링크가 된다.
  */
@@ -164,4 +232,5 @@ function queries(colorName, faceKey, bodyKey) {
   ];
 }
 
-export { neutrals, NECK, SILHOUETTE, FABRIC, patternFor, outfits, queries, SHOPS, lchHex };
+export { neutrals, NECK, SILHOUETTE, FABRIC, patternFor, outfits, queries, SHOPS,
+         lchHex, enColor, outfitPrompt };
