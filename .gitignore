@@ -1,0 +1,4 @@
+# wrangler 로컬 캐시 — 계정 ID·이메일이 들어간다
+worker/.wrangler/
+node_modules/
+*.log
