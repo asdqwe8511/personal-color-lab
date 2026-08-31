@@ -160,6 +160,31 @@ function genderOk(name, want) {
   return true;
 }
 
+/* ── 카테고리 필터 ──────────────────────────────────────────
+ * "여성 니트"로 검색해도 반팔티·나시·원피스가 섞여 온다.
+ * 상품명에 그 품목 단어가 있고, 다른 품목 단어가 없어야 통과시킨다.
+ */
+const CATEGORY = {
+  knit:   { yes:/(니트|스웨터|가디건|풀오버)/,
+            no:/(원피스|팬츠|바지|슬랙스|스커트|치마|코트|패딩|가방|모자|목도리|장갑|양말)/ },
+  tee:    { yes:/(티셔츠|반팔티|긴팔티|맨투맨|나시|탑|티)/,
+            no:/(니트|스웨터|원피스|팬츠|바지|스커트|치마|자켓|재킷|코트|가방)/ },
+  bottom: { yes:/(팬츠|바지|슬랙스|데님|청바지|조거)/,
+            no:/(원피스|니트|티셔츠|셔츠|자켓|재킷|코트|가방|스커트|치마)/ },
+  skirt:  { yes:/(스커트|치마)/, no:/(팬츠|바지|원피스|가방)/ },
+  dress:  { yes:/(원피스|드레스)/, no:/(팬츠|바지|가방|커튼)/ },
+  outer:  { yes:/(자켓|재킷|코트|점퍼|블레이저|아우터|패딩|가디건|블루종)/,
+            no:/(원피스|팬츠|바지|가방|신발)/ },
+  shirt:  { yes:/(셔츠|블라우스)/,
+            no:/(티셔츠|반팔티|긴팔티|니트|팬츠|바지|원피스)/ }
+};
+function categoryOk(name, cat) {
+  const c = CATEGORY[cat];
+  if (!c) return true;
+  const n = String(name || "");
+  return c.yes.test(n) && !c.no.test(n);
+}
+
 /* ── 매칭 ───────────────────────────────────────────────────
  * targets: [{hex, name}]  처방 팔레트
  * 각 상품을 팔레트 중 가장 가까운 색과의 ΔE 로 평가한다.
@@ -176,6 +201,7 @@ async function match(keyword, targets, opt) {
   for (let i = 0; i < items.length; i += batch) {
     await Promise.all(items.slice(i, i + batch).map(async p => {
       if (!genderOk(p.productName, opt.gender)) return;
+      if (!categoryOk(p.productName, opt.cat)) return;
       const im = await loadImage(p.productImage);
       if (!im) return;
       const rgb = garmentColor(im);
@@ -195,5 +221,5 @@ async function match(keyword, targets, opt) {
   return out.slice(0, opt.want || 8);
 }
 
-export { match, search, garmentColor, loadImage, genderOk, colorWords, expandKeys,
-         dE, lab, labOfHex, toHex, WORKER };
+export { match, search, garmentColor, loadImage, genderOk, categoryOk, colorWords,
+         expandKeys, CATEGORY, dE, lab, labOfHex, toHex, WORKER };
