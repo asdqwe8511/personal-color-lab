@@ -422,7 +422,7 @@ function run(quiet){
       : c.ratios.BW < 1.08 ? "상체 굴곡이 완만합니다" : "중간 정도입니다"]
   ].map(r => "<tr><td>"+r[0]+'</td><td class="num">'+r[1]+"</td><td>"+r[2]+"</td></tr>").join("");
 
-  try{ localStorage.setItem("body-result", JSON.stringify({ key:c.key, ko:T.ko })); }catch(e){}
+  try{ localStorage.setItem("body-result", JSON.stringify({ key:c.key, ko:T.ko, m:m })); }catch(e){}
   renderStack(T);
   if (!quiet) $("result").scrollIntoView({ behavior:"smooth", block:"start" });
 }

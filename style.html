@@ -46,6 +46,8 @@
 
 .outfits{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px}
 .outfit{border:1px solid var(--rule); border-radius:3px; background:var(--surface); overflow:hidden}
+.outfit .figure{background:var(--surface-2); border-bottom:1px solid var(--rule); padding:6px 0}
+.outfit .figure svg{display:block; width:100%; height:auto; max-height:300px}
 .outfit .look{display:flex; height:96px}
 .outfit .look i{flex:1; display:block}
 .outfit .look i.pt{flex:0 0 20%}
@@ -150,6 +152,7 @@
 
 <script type="module">
 import { neutrals, NECK, SILHOUETTE, FABRIC, patternFor, outfits, queries, SHOPS } from "./assets/style.js";
+import { dressedSVG, BOTTOM_TYPE } from "./assets/dress.js";
 
 const $ = id => document.getElementById(id);
 function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show");
@@ -226,11 +229,17 @@ function render(){
     "</b>입니다. " + josa(S.avoid, "은", "는") + " 피하세요.</p></div>";
 
   /* 코디 */
+  const bm = body.m;                       // 착장 그림에 쓸 실측 치수
+  const dressOpt = { skin: color.skin, hair: color.hairColor,
+                     neckline: N.good[0], bodyKey: body.key,
+                     bottom: BOTTOM_TYPE[body.key] };
   $("outfits").innerHTML = outfits(best, season).map(o =>
-    '<div class="outfit"><div class="look">' +
-    o.items.map(it => '<i class="' + (it.role === "포인트" ? "pt" : "") + '" style="background:' +
-      it.c.hex + '" title="' + it.role + " " + it.c.name + '"></i>').join("") +
-    '</div><div class="body"><h4>' + o.name + '</h4><p class="why">' + o.why + '</p><dl>' +
+    '<div class="outfit">' +
+    (bm ? '<div class="figure"><svg viewBox="0 0 200 420" role="img" aria-label="' + o.name +
+      ' 착장">' + dressedSVG(bm, o, Object.assign({ width:200, height:420 }, dressOpt)) + '</svg></div>'
+        : '<div class="look">' + o.items.map(it => '<i class="' + (it.role === "포인트" ? "pt" : "") +
+          '" style="background:' + it.c.hex + '"></i>').join("") + '</div>') +
+    '<div class="body"><h4>' + o.name + '</h4><p class="why">' + o.why + '</p><dl>' +
     o.items.map(it => "<dt>" + it.role + "</dt><dd>" + it.c.name + " " + it.c.hex.toUpperCase() + "</dd>").join("") +
     "</dl></div></div>").join("");
 

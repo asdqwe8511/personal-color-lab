@@ -950,6 +950,8 @@ function render(r){
   try{ localStorage.setItem("pc-result", JSON.stringify({
     key:r.key, ko:T.ko, en:T.en, season:T.season,
     sig:T.sig,                       // 스타일 처방에서 색을 생성할 때 쓴다
+    skin:labHex(r.m.L, r.m.a, r.m.b),                 // 실측 피부색 — 착장 그림에 쓴다
+    hairColor:(hair[0]||{}).hex || "#3A2A22",
     best:best.map(function(x){return {hex:x.hex,name:x.name,L:x.L,C:x.C,h:x.h};}),
     worst:worst.map(function(x){return {hex:x.hex,name:x.name};}),
     hair:hair.map(function(x){return {hex:x.hex,name:x.name};}),
