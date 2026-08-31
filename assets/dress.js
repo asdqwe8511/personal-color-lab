@@ -1,17 +1,19 @@
-/* 착장 그림 — 측정한 체형에 처방된 옷을 입혀 그린다.
+/* 착장 그림 — 측정한 치수로 인체를 그리고 처방된 옷을 입힌다.
  *
- * 생성형 이미지 모델을 쓰지 않는다. 모델은 '일반적인 사람'을 그리지
- * 이 사람의 어깨 39cm, 허리 66cm, 실측 피부색을 반영하지 못한다.
- * 여기서는 측정값 그대로를 좌표로 써서 그린다.
+ * 생성형 이미지를 쓰지 않는 이유: 모델은 프롬프트로 어깨 39cm·허리 66cm를
+ * 받을 방법이 없어 자기가 아는 체형을 그린다. 치수를 잰 의미가 사라진다.
+ * 인터넷 인물 사진 수집도 쓰지 않는다 — 초상권·저작권 문제가 있다.
+ *
+ * 여기서는 둘레를 폭으로 환산해 16개 단면의 반폭을 구하고, 그 점들을
+ * 스플라인으로 이어 윤곽을 만든다. 치수를 바꾸면 그림이 즉시 바뀐다.
  */
 "use strict";
 
-const CIRC_TO_WIDTH = 2.74;
+const CIRC_W = 2.74;                       // 몸통 둘레 → 폭 (깊이 0.72배 타원 가정)
+const LIMB_W = Math.PI;                    // 팔다리 둘레 → 지름 (원기둥 가정)
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
-/* ── 넥라인 ──────────────────────────────────────────────────
- * 처방된 목선 이름을 실제로 그릴 수 있는 형태로 옮긴다.
- */
+/* ── 넥라인 ─────────────────────────────────────────────────── */
 const NECK_TYPE = {
   "브이넥": "v", "딥 브이넥": "deepv", "부드러운 브이넥": "v",
   "스쿱넥": "scoop", "라운드넥": "crew", "크루넥": "crew",
@@ -19,144 +21,239 @@ const NECK_TYPE = {
   "스퀘어넥": "square", "카울넥": "cowl", "오프숄더": "off",
   "대부분의 목선": "crew"
 };
-function neckTypeOf(name) { return NECK_TYPE[name] || "crew"; }
+const neckTypeOf = n => NECK_TYPE[n] || "crew";
 
-/* 좌우 어깨점에서 목둘레 곡선을 그린다 */
-function neckEdge(t, Lx, Rx, y, cx, unit) {
-  const d = { v: 2.6, deepv: 4.2, scoop: 3.0, crew: 1.2, boat: 0.7,
-              turtle: 1.0, square: 2.2, cowl: 2.6, off: 0.2 }[t] * unit;
-  const halfW = { v: 1.1, deepv: 1.0, scoop: 1.5, crew: 1.2, boat: 2.3,
-                  turtle: 1.1, square: 1.4, cowl: 1.6, off: 2.9 }[t] * unit;
-  const nl = cx - halfW, nr = cx + halfW;
-  if (t === "v" || t === "deepv")
-    return "L" + nl + " " + y + " L" + cx + " " + (y + d) + " L" + nr + " " + y;
-  if (t === "square")
-    return "L" + nl + " " + y + " L" + nl + " " + (y + d) + " L" + nr + " " + (y + d) + " L" + nr + " " + y;
-  if (t === "boat" || t === "off")
-    return "L" + nl + " " + (y + d) + " Q" + cx + " " + (y + d * 1.6) + " " + nr + " " + (y + d);
-  if (t === "cowl")
-    return "L" + nl + " " + y + " C" + nl + " " + (y + d * 1.5) + " " + nr + " " + (y + d * 1.5) + " " + nr + " " + y;
-  // scoop / crew / turtle
-  return "L" + nl + " " + y + " Q" + cx + " " + (y + d * 1.9) + " " + nr + " " + y;
-}
-
-/* ── 하의 실루엣 ─────────────────────────────────────────────── */
 const BOTTOM_TYPE = {
   hourglass: "straight", rectangle: "wide", pear: "bootcut",
   inverted: "wide", apple: "straight"
 };
-/* 밑단/무릎 폭 배율 (엉덩이 폭 기준) */
 const BOTTOM_SHAPE = {
-  straight: { knee: 0.52, hem: 0.50 },
-  wide:     { knee: 0.72, hem: 0.86 },
-  bootcut:  { knee: 0.44, hem: 0.66 },
-  skinny:   { knee: 0.36, hem: 0.28 },
-  aline:    { knee: 0.95, hem: 1.20 }
+  straight: { knee: 1.00, hem: 0.96 },
+  wide:     { knee: 1.42, hem: 1.62 },
+  bootcut:  { knee: 0.88, hem: 1.30 },
+  skinny:   { knee: 0.74, hem: 0.58 },
+  aline:    { knee: 1.9,  hem: 2.4  }
 };
 
-/* ── 착장 그림 ───────────────────────────────────────────────── */
-let _u = 0;
+/* ── 색 보조 ────────────────────────────────────────────────── */
+function shade(hex, amt) {                 // amt<0 어둡게, >0 밝게
+  const n = parseInt(hex.slice(1), 16);
+  const f = c => clamp(Math.round(c + 255 * amt), 0, 255);
+  return "#" + [f(n >> 16), f((n >> 8) & 255), f(n & 255)]
+    .map(v => v.toString(16).padStart(2, "0")).join("");
+}
+
+/* 세로 접선을 가진 부드러운 곡선 — 몸의 윤곽이 각지지 않게 */
+function curve(pts) {
+  let d = "";
+  pts.forEach((p, i) => {
+    if (i === 0) { d += "M" + p[0].toFixed(1) + " " + p[1].toFixed(1); return; }
+    const q = pts[i - 1], dy = (p[1] - q[1]) * 0.42;
+    d += " C" + q[0].toFixed(1) + " " + (q[1] + dy).toFixed(1) +
+         " " + p[0].toFixed(1) + " " + (p[1] - dy).toFixed(1) +
+         " " + p[0].toFixed(1) + " " + p[1].toFixed(1);
+  });
+  return d;
+}
+/* 좌우 대칭 폐곡선 */
+function symBody(st, cx, sign1) {
+  const right = st.map(s => [cx + s.w, s.y]);
+  const left = st.slice().reverse().map(s => [cx - s.w, s.y]);
+  return curve(right) + " " + curve(left).replace(/^M[\d.\-]+ [\d.\-]+/, "L" +
+    (cx - st[st.length - 1].w).toFixed(1) + " " + st[st.length - 1].y.toFixed(1)) + " Z";
+}
+
+/* ── 인체 단면 ──────────────────────────────────────────────── */
+function stations(m, y, s) {
+  const w = c => (c / CIRC_W) * s / 2;
+  const sh = (m.shoulder * s) / 2;
+  const bust = w(m.bust), waist = w(m.waist), hip = w(m.hip);
+  return [
+    { k: "neck",   y: y.neckBase, w: w(m.neck || m.bust * 0.38) * 1.02 },
+    { k: "shoul",  y: y.shoulder, w: sh },
+    { k: "armpit", y: y.armpit,   w: bust * 1.01 },
+    { k: "bust",   y: y.bust,     w: bust },
+    { k: "under",  y: y.under,    w: bust * 0.87 },
+    { k: "waist",  y: y.waist,    w: waist },
+    { k: "hhip",   y: y.hhip,     w: waist + (hip - waist) * 0.52 },
+    { k: "hip",    y: y.hip,      w: hip },
+    { k: "crotch", y: y.crotch,   w: hip * 0.97 }
+  ];
+}
+
+/* ── 착장 그림 ──────────────────────────────────────────────── */
+let _uid = 0;
 function dressedSVG(m, outfit, opt) {
   opt = opt || {};
-  const W = opt.width || 200, H = opt.height || 420;
+  const W = opt.width || 200, H = opt.height || 460;
   const skin = opt.skin || "#C9A183", hair = opt.hair || "#3A2A22";
   const neckT = neckTypeOf(opt.neckline || "라운드넥");
   const bt = BOTTOM_SHAPE[opt.bottom || BOTTOM_TYPE[opt.bodyKey] || "straight"];
-  const uid = "d" + (++_u);
-
+  const u = "f" + (++_uid);
   const top = outfit.items[0].c.hex, bottom = outfit.items[1].c.hex, point = outfit.items[2].c.hex;
 
-  const yTop = H * 0.02, yFoot = H * 0.985, FH = yFoot - yTop;
-  const s = FH / m.height;                       // px per cm
-  const w = c => (c / CIRC_TO_WIDTH) * s / 2;    // 둘레 → 반폭 px
+  const yTop = H * 0.015, yFoot = H * 0.985, FH = yFoot - yTop;
+  const s = FH / m.height;
   const cx = W / 2;
-  const headH = (m.height / 7.6) * s;
-  /* 어깨를 0.200에 두면 목이 신장의 6.6%가 되어 지나치게 길다 (실제 4% 안팎) */
-  const yShoulder = yTop + FH * 0.172, yBust = yTop + FH * 0.258;
-  const yWaist = yTop + FH * 0.370, yHip = yTop + FH * 0.475;
-  const yKnee = yTop + FH * 0.705, yAnkle = yTop + FH * 0.945;
-  const shW = (m.shoulder * s) / 2;
-  const bW = w(m.bust), wW = w(m.waist), hW = w(m.hip);
-  const unit = shW * 0.30;
+  const headH = FH / 7.5;
+  /* 7.5등신 기준 세로 배치 */
+  const y = {
+    chin:     yTop + headH,
+    neckBase: yTop + FH * 0.152,
+    shoulder: yTop + FH * 0.178,
+    armpit:   yTop + FH * 0.232,
+    bust:     yTop + FH * 0.272,
+    under:    yTop + FH * 0.318,
+    waist:    yTop + FH * 0.378,
+    hhip:     yTop + FH * 0.432,
+    hip:      yTop + FH * 0.487,
+    crotch:   yTop + FH * 0.545,
+    thigh:    yTop + FH * 0.620,
+    knee:     yTop + FH * 0.705,
+    calf:     yTop + FH * 0.795,
+    ankle:    yTop + FH * 0.925,
+    foot:     yFoot
+  };
+  const st = stations(m, y, s);
+  const at = k => st.find(x => x.k === k).w;
+  const legR = (m.thigh ? m.thigh : m.hip * 0.58) / LIMB_W * s / 2;
+  const calfR = (m.calf ? m.calf : m.hip * 0.38) / LIMB_W * s / 2;
+  const ankR = calfR * 0.56;
+  const armR = at("bust") * 0.30;
   const P = [];
 
-  /* 몸 — 실측 피부색으로 */
-  P.push('<ellipse cx="' + cx + '" cy="' + (yTop + headH * 0.52) + '" rx="' + (headH * 0.34) +
-    '" ry="' + (headH * 0.46) + '" fill="' + skin + '"/>');
-  P.push('<path d="M' + (cx - headH * 0.36) + ' ' + (yTop + headH * 0.46) +
-    ' a' + (headH * 0.36) + ' ' + (headH * 0.48) + ' 0 0 1 ' + (headH * 0.72) + ' 0' +
-    ' l0 ' + (-headH * 0.12) + ' a' + (headH * 0.36) + ' ' + (headH * 0.42) + ' 0 0 0 ' +
-    (-headH * 0.72) + ' 0 Z" fill="' + hair + '"/>');
-  P.push('<rect x="' + (cx - unit * 0.8) + '" y="' + (yTop + headH * 0.9) + '" width="' + (unit * 1.6) +
-    '" height="' + (yShoulder - yTop - headH * 0.85) + '" fill="' + skin + '"/>');
-  // 몸통·다리 (옷 아래로 비치는 부분)
-  P.push('<path d="M' + (cx - shW) + ' ' + yShoulder + ' C' + (cx - bW) + ' ' + yBust +
-    ' ' + (cx - wW) + ' ' + yWaist + ' ' + (cx - wW) + ' ' + yWaist +
-    ' C' + (cx - hW) + ' ' + yHip + ' ' + (cx - hW) + ' ' + yHip + ' ' + (cx - hW) + ' ' + yHip +
-    ' L' + (cx + hW) + ' ' + yHip + ' C' + (cx + wW) + ' ' + yWaist + ' ' + (cx + bW) + ' ' + yBust +
-    ' ' + (cx + shW) + ' ' + yShoulder + ' Z" fill="' + skin + '"/>');
-  [-1, 1].forEach(g => {                          // 팔
-    P.push('<path d="M' + (cx + g * shW * 0.94) + ' ' + yShoulder +
-      ' L' + (cx + g * (hW + unit * 0.5)) + ' ' + (yHip + unit) +
-      ' l' + (g * unit * 0.75) + ' 0 L' + (cx + g * shW * 0.94 + g * unit * 0.9) + ' ' + yShoulder +
-      ' Z" fill="' + skin + '"/>');
-    P.push('<path d="M' + (cx + g * unit * 0.35) + ' ' + yHip +
-      ' L' + (cx + g * hW * 0.94) + ' ' + yHip +
-      ' L' + (cx + g * hW * bt.knee) + ' ' + yKnee +
-      ' L' + (cx + g * hW * bt.hem * 0.62) + ' ' + yAnkle +
-      ' L' + (cx + g * unit * 0.3) + ' ' + yAnkle + ' Z" fill="' + skin + '"/>');
+  const g = (id, c, a, b) => '<linearGradient id="' + id + '" x1="0" x2="1">' +
+    '<stop offset="0" stop-color="' + shade(c, a) + '"/>' +
+    '<stop offset=".42" stop-color="' + c + '"/>' +
+    '<stop offset="1" stop-color="' + shade(c, b) + '"/></linearGradient>';
+  P.push("<defs>" + g(u + "s", skin, .05, -.10) + g(u + "t", top, .07, -.11) +
+         g(u + "b", bottom, .06, -.10) + "</defs>");
+
+  /* 다리 — 허벅지·무릎·종아리·발목 굵기를 실측에서 */
+  [-1, 1].forEach(d => {
+    const hx = cx + d * at("hip") * 0.50;
+    P.push('<path d="' + curve([
+      [hx - legR, y.crotch], [cx + d * at("hip") * 0.52 - d * legR * 0.1, y.thigh],
+      [cx + d * (legR * 0.62) * 0 + hx - legR * 0.72, y.knee],
+      [hx - calfR * 0.86, y.calf], [hx - ankR, y.ankle]
+    ]) + " L" + (hx + ankR) + " " + y.ankle +
+      " " + curve([[hx + ankR, y.ankle], [hx + calfR * 0.86, y.calf],
+                   [hx + legR * 0.72, y.knee], [hx + legR, y.thigh],
+                   [hx + legR, y.crotch]]).replace(/^M[^C]*/, "") +
+      ' Z" fill="url(#' + u + 's)"/>');
+    P.push('<ellipse cx="' + hx + '" cy="' + (y.foot - armR * 0.3) + '" rx="' + (ankR * 1.5) +
+      '" ry="' + (ankR * 0.62) + '" fill="' + shade(skin, -.18) + '"/>');
   });
 
-  /* 하의 — 실루엣 유형에 따라 무릎·밑단 폭이 달라진다 */
-  const bottomHem = opt.bottom === "aline" ? yKnee + (yAnkle - yKnee) * 0.45 : yAnkle;
-  P.push('<path d="M' + (cx - hW * 1.03) + ' ' + (yWaist + (yHip - yWaist) * 0.15) +
-    ' L' + (cx + hW * 1.03) + ' ' + (yWaist + (yHip - yWaist) * 0.15) +
-    ' L' + (cx + hW * 1.02) + ' ' + yHip +
-    ' L' + (cx + hW * bt.knee * 1.12) + ' ' + yKnee +
-    ' L' + (cx + hW * bt.hem * 1.1) + ' ' + bottomHem +
-    ' L' + (cx - hW * bt.hem * 1.1) + ' ' + bottomHem +
-    ' L' + (cx - hW * bt.knee * 1.12) + ' ' + yKnee +
-    ' L' + (cx - hW * 1.02) + ' ' + yHip + ' Z" fill="' + bottom + '"/>');
-  if (opt.bottom !== "aline")                     // 가랑이 분할선
-    P.push('<path d="M' + cx + ' ' + (yHip + unit * 0.4) + ' L' + cx + ' ' + bottomHem +
-      '" stroke="rgba(0,0,0,.16)" stroke-width="1.4"/>');
+  /* 몸통 */
+  P.push('<path d="' + symBody(st, cx) + '" fill="url(#' + u + 's)"/>');
 
-  /* 상의 — 처방된 목선으로 */
-  const hemY = yHip + (yWaist - yHip) * -0.15;
-  const sl = cx - shW * 1.03, sr = cx + shW * 1.03;
-  let d = "M" + sl + " " + yShoulder + " ";
-  d += neckEdge(neckT, sl, sr, yShoulder, cx, unit);
-  d += " L" + sr + " " + yShoulder +
-       " C" + (cx + bW * 1.12) + " " + yBust + " " + (cx + wW * 1.14) + " " + yWaist +
-       " " + (cx + hW * 1.06) + " " + hemY +
-       " L" + (cx - hW * 1.06) + " " + hemY +
-       " C" + (cx - wW * 1.14) + " " + yWaist + " " + (cx - bW * 1.12) + " " + yBust +
-       " " + sl + " " + yShoulder + " Z";
-  P.push('<path d="' + d + '" fill="' + top + '"/>');
-  if (neckT === "turtle")
-    P.push('<rect x="' + (cx - unit * 1.15) + '" y="' + (yShoulder - unit * 1.5) + '" width="' + (unit * 2.3) +
-      '" height="' + (unit * 1.8) + '" rx="' + (unit * 0.35) + '" fill="' + top + '"/>');
-  // 소매
-  [-1, 1].forEach(g => {
-    P.push('<path d="M' + (cx + g * shW * 0.99) + ' ' + yShoulder +
-      ' L' + (cx + g * (bW * 1.1 + unit * 0.5)) + ' ' + (yBust + unit * 1.6) +
-      ' l' + (g * unit * 0.95) + ' 0 L' + (cx + g * shW * 0.99 + g * unit * 1.05) + ' ' + yShoulder +
-      ' Z" fill="' + top + '"/>');
+  /* 팔 */
+  [-1, 1].forEach(d => {
+    const x0 = cx + d * (at("shoul") - armR * 0.7);
+    P.push('<path d="' + curve([
+      [x0 - d * armR, y.shoulder + armR * 0.3],
+      [cx + d * (at("bust") + armR * 1.5), y.under],
+      [cx + d * (at("waist") + armR * 1.9), y.hhip],
+      [cx + d * (at("hip") + armR * 1.2), y.hip + armR]
+    ]) + " l" + (d * armR * 0.95) + " 0 " +
+      curve([[cx + d * (at("hip") + armR * 2.2), y.hip + armR],
+             [cx + d * (at("waist") + armR * 3.0), y.hhip],
+             [cx + d * (at("bust") + armR * 2.6), y.under],
+             [x0 + d * armR * 0.9, y.shoulder + armR * 0.3]]).replace(/^M[^C]*/, "") +
+      ' Z" fill="' + shade(skin, d > 0 ? -.06 : .02) + '"/>');
   });
 
-  /* 포인트 — 좁은 면적에만 (스카프/벨트) */
-  if (opt.bottom === "aline" || /hourglass|rectangle/.test(opt.bodyKey || ""))
-    P.push('<rect x="' + (cx - wW * 1.16) + '" y="' + (yWaist - unit * 0.34) + '" width="' + (wW * 2.32) +
-      '" height="' + (unit * 0.68) + '" fill="' + point + '"/>');
+  /* 머리 · 목 */
+  P.push('<rect x="' + (cx - at("neck") * 0.62) + '" y="' + (y.chin - headH * 0.06) +
+    '" width="' + (at("neck") * 1.24) + '" height="' + (y.shoulder - y.chin + headH * 0.1) +
+    '" fill="' + shade(skin, -.05) + '"/>');
+  P.push('<ellipse cx="' + cx + '" cy="' + (yTop + headH * 0.5) + '" rx="' + (headH * 0.33) +
+    '" ry="' + (headH * 0.46) + '" fill="url(#' + u + 's)"/>');
+  P.push('<path d="M' + (cx - headH * 0.35) + ' ' + (yTop + headH * 0.52) +
+    ' a' + (headH * 0.35) + ' ' + (headH * 0.5) + ' 0 0 1 ' + (headH * 0.7) + ' 0' +
+    ' q' + (-headH * 0.05) + ' ' + (-headH * 0.26) + ' ' + (-headH * 0.35) + ' ' + (-headH * 0.24) +
+    ' q' + (-headH * 0.3) + ' ' + (-headH * 0.02) + ' ' + (-headH * 0.35) + ' ' + (headH * 0.24) +
+    ' Z" fill="' + hair + '"/>');
+
+  /* 하의 */
+  const wb = y.waist + (y.hip - y.waist) * 0.10;
+  const hemY = opt.bottom === "aline" ? y.knee + (y.ankle - y.knee) * 0.35 : y.ankle + ankR * 0.3;
+  if (opt.bottom === "aline") {
+    P.push('<path d="' + curve([[cx - at("waist") * 1.05, wb], [cx - at("hip") * 1.04, y.hip],
+      [cx - at("hip") * bt.knee, y.knee], [cx - at("hip") * bt.hem, hemY]]) +
+      " L" + (cx + at("hip") * bt.hem) + " " + hemY +
+      " " + curve([[cx + at("hip") * bt.hem, hemY], [cx + at("hip") * bt.knee, y.knee],
+        [cx + at("hip") * 1.04, y.hip], [cx + at("waist") * 1.05, wb]]).replace(/^M[^C]*/, "") +
+      ' Z" fill="url(#' + u + 'b)"/>');
+  } else {
+    [-1, 1].forEach(d => {
+      const hx = cx + d * at("hip") * 0.50;
+      P.push('<path d="' + curve([
+        [cx + d * 1.5, wb], [cx + d * at("hip") * 1.04, wb],
+        [cx + d * at("hip") * 1.03, y.hip],
+        [hx + d * legR * bt.knee, y.knee], [hx + d * calfR * bt.hem * 1.15, hemY]
+      ]) + " L" + (hx - d * calfR * bt.hem * 0.55) + " " + hemY +
+        " L" + (cx + d * 1.5) + " " + (y.crotch + (y.knee - y.crotch) * 0.12) + ' Z" fill="url(#' + u + 'b)"/>');
+    });
+    P.push('<path d="M' + cx + ' ' + wb + ' L' + cx + ' ' + (y.crotch + 2) +
+      '" stroke="' + shade(bottom, -.10) + '" stroke-width="1.2"/>');
+  }
+
+  /* 상의 — 처방된 목선 */
+  const sl = cx - at("shoul") * 1.04, sr = cx + at("shoul") * 1.04;
+  const nd = { v: 2.9, deepv: 4.4, scoop: 3.1, crew: 1.3, boat: 0.8,
+               turtle: 1.0, square: 2.3, cowl: 2.7, off: 0.3 }[neckT] * armR;
+  const nw = { v: 1.15, deepv: 1.0, scoop: 1.6, crew: 1.25, boat: 2.5,
+               turtle: 1.1, square: 1.5, cowl: 1.7, off: 3.0 }[neckT] * armR;
+  const nl = cx - nw, nr = cx + nw, ys = y.shoulder;
+  let neck;
+  if (neckT === "v" || neckT === "deepv")
+    neck = "L" + nl + " " + ys + " L" + cx + " " + (ys + nd) + " L" + nr + " " + ys;
+  else if (neckT === "square")
+    neck = "L" + nl + " " + ys + " L" + nl + " " + (ys + nd) + " L" + nr + " " + (ys + nd) + " L" + nr + " " + ys;
+  else if (neckT === "boat" || neckT === "off")
+    neck = "L" + nl + " " + (ys + nd) + " Q" + cx + " " + (ys + nd * 1.7) + " " + nr + " " + (ys + nd);
+  else if (neckT === "cowl")
+    neck = "L" + nl + " " + ys + " C" + nl + " " + (ys + nd * 1.6) + " " + nr + " " + (ys + nd * 1.6) + " " + nr + " " + ys;
   else
-    P.push('<path d="M' + (cx - unit * 1.4) + ' ' + (yShoulder + unit * 0.4) +
-      ' q' + (unit * 1.4) + ' ' + (unit * 1.5) + ' ' + (unit * 2.8) + ' 0' +
-      ' l0 ' + (unit * 0.62) + ' q' + (-unit * 1.4) + ' ' + (unit * 1.5) + ' ' + (-unit * 2.8) + ' 0 Z"' +
-      ' fill="' + point + '"/>');
+    neck = "L" + nl + " " + ys + " Q" + cx + " " + (ys + nd * 2.0) + " " + nr + " " + ys;
 
-  /* 신발 */
-  [-1, 1].forEach(g => P.push('<ellipse cx="' + (cx + g * hW * 0.5) + '" cy="' + (yFoot - unit * 0.25) +
-    '" rx="' + (unit * 0.72) + '" ry="' + (unit * 0.34) + '" fill="rgba(0,0,0,.42)"/>'));
+  const topHem = y.hip - (y.hip - y.waist) * 0.18;
+  P.push('<path d="M' + sl + " " + ys + " " + neck + " L" + sr + " " + ys +
+    " " + curve([[cx + at("armpit") * 1.09, y.armpit], [cx + at("bust") * 1.08, y.bust],
+      [cx + at("waist") * 1.12, y.waist], [cx + at("hip") * 1.06, topHem]]).replace(/^M[^C]*/, "") +
+    " L" + (cx - at("hip") * 1.06) + " " + topHem +
+    " " + curve([[cx - at("hip") * 1.06, topHem], [cx - at("waist") * 1.12, y.waist],
+      [cx - at("bust") * 1.08, y.bust], [cx - at("armpit") * 1.09, y.armpit],
+      [sl, ys]]).replace(/^M[^C]*/, "") + ' Z" fill="url(#' + u + 't)"/>');
+  if (neckT === "turtle")
+    P.push('<rect x="' + (cx - nw * 1.1) + '" y="' + (ys - armR * 1.7) + '" width="' + (nw * 2.2) +
+      '" height="' + (armR * 2.0) + '" rx="' + (armR * 0.3) + '" fill="' + shade(top, -.05) + '"/>');
+
+  /* 소매 */
+  [-1, 1].forEach(d => {
+    P.push('<path d="' + curve([
+      [cx + d * at("shoul") * 1.02, ys],
+      [cx + d * (at("bust") + armR * 2.1), y.bust + armR],
+      [cx + d * (at("bust") + armR * 2.3), y.under + armR * 0.6]
+    ]) + " l" + (-d * armR * 1.5) + " 0 " +
+      curve([[cx + d * (at("bust") + armR * 0.8), y.under + armR * 0.6],
+             [cx + d * (at("armpit") * 0.92), y.armpit],
+             [cx + d * at("shoul") * 0.55, ys]]).replace(/^M[^C]*/, "") +
+      ' Z" fill="' + shade(top, d > 0 ? -.05 : .03) + '"/>');
+  });
+
+  /* 포인트 — 좁은 면적에만 */
+  if (/hourglass|rectangle/.test(opt.bodyKey || "") || opt.bottom === "aline")
+    P.push('<rect x="' + (cx - at("waist") * 1.14) + '" y="' + (y.waist - armR * 0.32) +
+      '" width="' + (at("waist") * 2.28) + '" height="' + (armR * 0.64) +
+      '" fill="' + point + '" rx="' + (armR * 0.1) + '"/>');
+  else
+    P.push('<path d="M' + (cx - nw * 1.05) + ' ' + (ys + nd * 0.5) +
+      ' Q' + cx + ' ' + (ys + nd * 1.9) + ' ' + (cx + nw * 1.05) + ' ' + (ys + nd * 0.5) +
+      ' l0 ' + (armR * 0.6) + ' Q' + cx + ' ' + (ys + nd * 1.9 + armR * 0.6) + ' ' +
+      (cx - nw * 1.05) + ' ' + (ys + nd * 0.5 + armR * 0.6) + ' Z" fill="' + point + '"/>');
 
   return P.join("");
 }

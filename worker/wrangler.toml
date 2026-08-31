@@ -1,0 +1,19 @@
+name = "pc-lab-image"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# GEMINI_API_KEY 는 여기에 적지 않는다. 이 파일은 저장소에 올라간다.
+#   npx wrangler secret put GEMINI_API_KEY
+# 위 명령으로 서버에만 저장한다.
+
+# Cloudflare Workers AI — 계정에 포함돼 있고 별도 키가 필요 없다
+[ai]
+binding = "AI"
+
+[vars]
+# 하루 호출 상한 — 예상치 못한 과금을 막는다
+DAILY_LIMIT = "200"
+# 이 오리진에서 온 요청만 받는다
+ALLOWED_ORIGIN = "https://asdqwe8511.github.io"
+# 기본 이미지 생성 경로. "workers-ai" | "gemini"
+DEFAULT_PROVIDER = "workers-ai"
