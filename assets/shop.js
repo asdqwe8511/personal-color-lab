@@ -41,20 +41,59 @@ async function searchOnce(keyword, limit) {
     throw new Error("쿠팡: " + (body.rMessage || body.rCode));
   return (body.data || {}).productData || [];
 }
+/* 한 번에 10건뿐이므로 키워드를 여러 개 던져 합친다.
+   조기 종료하면 후보가 10~20건에 그쳐 색이 맞는 상품이 위로 못 올라온다. */
 async function search(keyword, want) {
-  const keys = Array.isArray(keyword) ? keyword : [keyword];
+  const keys = (Array.isArray(keyword) ? keyword : [keyword]).slice(0, 8);
   const seen = new Set(), out = [];
-  for (const k of keys) {
-    let items = [];
-    try { items = await searchOnce(k, CP_MAX); } catch (e) { continue; }
-    for (const p of items) {
+  const CONC = 3;                                  // 쿠팡 쪽 부담을 줄인다
+  for (let i = 0; i < keys.length; i += CONC) {
+    const batch = await Promise.all(keys.slice(i, i + CONC)
+      .map(k => searchOnce(k, CP_MAX).catch(() => [])));
+    for (const items of batch) for (const p of items) {
       const id = p.productId || p.productUrl;
       if (seen.has(id)) continue;
       seen.add(id); out.push(p);
     }
-    if (out.length >= (want || CP_MAX)) break;
   }
   return out;
+}
+
+/* ── 팔레트 색 → 상품명에 실제로 쓰이는 한국어 색상어 ──────────
+ * 색 이름으로 검색하면 안 된다고 했지만, 그건 "라이트 애프리콧"처럼
+ * 진단 용어를 그대로 넣을 때다. 쇼핑몰이 쓰는 일반 색상어로 바꾸면
+ * 후보의 색 분포가 크게 좋아진다. 최종 판정은 여전히 ΔE 로 한다.
+ */
+function colorWords(palette) {
+  const words = new Set();
+  for (const c of palette.slice(0, 8)) {
+    const L = lab(...hex2rgb(c.hex));
+    const C = Math.hypot(L[1], L[2]);
+    let h = Math.atan2(L[2], L[1]) * 180 / Math.PI; if (h < 0) h += 360;
+    if (C < 12) {                                  // 무채색
+      words.add(L[0] > 78 ? "화이트" : L[0] > 45 ? "그레이" : "블랙");
+      continue;
+    }
+    if (h < 20 || h >= 345) words.add(L[0] < 45 ? "버건디" : L[0] > 72 ? "핑크" : "레드");
+    else if (h < 45) words.add(L[0] > 75 ? "아이보리" : L[0] > 55 ? "베이지" : "브라운");
+    else if (h < 75) words.add(L[0] > 72 ? "크림" : L[0] > 50 ? "카멜" : "브라운");
+    else if (h < 105) words.add(L[0] > 70 ? "레몬" : "머스터드");
+    else if (h < 165) words.add(L[0] < 50 ? "카키" : "그린");
+    else if (h < 215) words.add("민트");
+    else if (h < 265) words.add(L[0] < 45 ? "네이비" : "블루");
+    else if (h < 310) words.add(L[0] < 45 ? "네이비" : "라벤더");
+    else words.add(L[0] < 50 ? "와인" : "퍼플");
+  }
+  return [...words];
+}
+
+/* 카테고리 + 색상어 조합으로 검색어를 늘린다 */
+function expandKeys(baseKeys, palette, gender) {
+  const G = gender === "men" ? "남성" : "여성";
+  const noun = (baseKeys[0] || "").split(" ").pop();
+  const keys = [...baseKeys];
+  for (const w of colorWords(palette).slice(0, 4)) keys.push(G + " " + w + " " + noun);
+  return keys;
 }
 
 /* ── 썸네일에서 옷 색 추출 ──────────────────────────────────
@@ -127,7 +166,10 @@ function genderOk(name, want) {
  */
 async function match(keyword, targets, opt) {
   opt = opt || {};
-  const items = await search(keyword, opt.pool || 20);
+  const baseKeys = Array.isArray(keyword) ? keyword : [keyword];
+  const keys = opt.expand === false ? baseKeys
+             : expandKeys(baseKeys, targets, opt.gender);
+  const items = await search(keys, opt.pool || 60);
   const tl = targets.map(t => ({ ...t, lab: labOfHex(t.hex) }));
   const out = [];
   const batch = 6;
@@ -148,10 +190,10 @@ async function match(keyword, targets, opt) {
         dE: Math.round(bestD * 10) / 10
       });
     }));
-    if (out.length >= (opt.want || 8) * 2) break;
   }
   out.sort((a, b) => a.dE - b.dE);
   return out.slice(0, opt.want || 8);
 }
 
-export { match, search, garmentColor, loadImage, genderOk, dE, lab, labOfHex, toHex, WORKER };
+export { match, search, garmentColor, loadImage, genderOk, colorWords, expandKeys,
+         dE, lab, labOfHex, toHex, WORKER };
