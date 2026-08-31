@@ -1,0 +1,267 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>의류 처방</title>
+<meta name="description" content="퍼스널 컬러·얼굴형·체형 세 축의 측정 결과를 합쳐 색·넥라인·실루엣·소재를 특정한 의류 처방을 만들고, 실제 쇼핑몰 검색으로 연결합니다.">
+<meta name="theme-color" content="#E6E6E8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161618" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="퍼스널컬러 측정실">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="의류 처방">
+<meta property="og:description" content="세 축의 측정 결과를 합쳐 색·넥라인·실루엣·소재를 특정한 의류 처방을 만듭니다.">
+<meta property="og:url" content="https://asdqwe8511.github.io/personal-color-lab/style.html">
+<meta property="og:image" content="https://asdqwe8511.github.io/personal-color-lab/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.axes{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:1px;
+  background:var(--rule); border:1px solid var(--rule); border-radius:3px; margin-bottom:24px}
+.ax{background:var(--surface); padding:13px 15px}
+.ax .tag{display:block; margin-bottom:4px}
+.ax b{font-family:"Gowun Batang",serif; font-size:18px; font-weight:700}
+.ax .miss{color:var(--ink-3); font-size:13px; font-family:"IBM Plex Sans KR",sans-serif; font-weight:400}
+.ax a{color:var(--accent); font-size:12.5px; text-decoration:none; display:block; margin-top:3px}
+.ax a:hover{text-decoration:underline}
+.ax.done{background:var(--accent-soft)}
+
+.rx{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:1px;
+  background:var(--rule); border:1px solid var(--rule); border-radius:3px}
+.rxc{background:var(--surface); padding:15px 16px}
+.rxc h3{font-family:"Gowun Batang",serif; font-weight:700; font-size:16px; margin-bottom:4px}
+.rxc .why{font-size:12px; color:var(--ink-3); line-height:1.5; margin-bottom:10px}
+.rxc ul{margin:0; padding-left:17px; display:flex; flex-direction:column; gap:5px}
+.rxc li{font-size:13.5px; color:var(--ink-2); line-height:1.5}
+.rxc .no{margin-top:9px; font-size:12.5px; color:var(--bad); line-height:1.5}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:2px}
+.chips span{font-size:12px; border:1px solid var(--rule-2); border-radius:2px; padding:3px 8px; color:var(--ink-2)}
+
+.fits{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1px;
+  background:var(--rule); border:1px solid var(--rule); border-radius:3px; margin-top:20px}
+.fit{background:var(--surface); padding:13px 15px}
+.fit .tag{display:block; margin-bottom:5px}
+.fit p{font-size:13.5px; color:var(--ink-2); line-height:1.55}
+
+.outfits{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px}
+.outfit{border:1px solid var(--rule); border-radius:3px; background:var(--surface); overflow:hidden}
+.outfit .look{display:flex; height:96px}
+.outfit .look i{flex:1; display:block}
+.outfit .look i.pt{flex:0 0 20%}
+.outfit .body{padding:12px 14px}
+.outfit h4{font-size:14px; font-weight:600; margin-bottom:4px}
+.outfit .why{font-size:12px; color:var(--ink-3); line-height:1.5}
+.outfit dl{margin:9px 0 0; display:grid; grid-template-columns:auto 1fr; gap:3px 9px; font-size:11.5px}
+.outfit dt{color:var(--ink-3)}
+.outfit dd{margin:0; font-family:"IBM Plex Mono",monospace; color:var(--ink-2)}
+
+.qrow{display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:11px 14px;
+  background:var(--surface); border-bottom:1px solid var(--rule)}
+.qrow:last-child{border-bottom:0}
+.qrow .lb{font-size:12px; color:var(--ink-3); width:48px; flex:none}
+.qrow .q{font-family:"IBM Plex Mono",monospace; font-size:13px; flex:1; min-width:150px}
+.qrow .shops{display:flex; gap:5px; flex-wrap:wrap}
+.qrow .shops a, .qrow button{font-size:11.5px; border:1px solid var(--rule-2); background:var(--surface-2);
+  border-radius:2px; padding:4px 8px; text-decoration:none; color:var(--ink-2); cursor:pointer}
+.qrow .shops a:hover, .qrow button:hover{border-color:var(--accent); color:var(--ink)}
+.qbox{border:1px solid var(--rule); border-radius:3px; overflow:hidden}
+</style>
+
+<div class="mast"><div class="wrap mast-in">
+  <span class="logo"><b>측정실</b></span>
+  <nav class="nav">
+    <a href="index.html">퍼스널 컬러</a>
+    <a href="face.html">얼굴형</a>
+    <a href="body.html">체형</a>
+    <a href="style.html" aria-current="page">의류</a>
+  </nav>
+</div></div>
+
+<header class="hero"><div class="wrap">
+  <h1>상품 목록 대신<br><em>처방전을 드립니다.</em></h1>
+  <p class="lede">세 축의 측정값을 합쳐 색·넥라인·실루엣·소재를 특정합니다.
+  이 조건을 들고 어디서 사든 실패가 줄어듭니다.</p>
+</div></header>
+
+<section id="axes-sec"><div class="wrap">
+  <div class="shead">
+    <span class="snum">01</span>
+    <div><h2>측정 결과</h2><p>세 축이 모두 있어야 처방이 완성됩니다. 빠진 것은 링크에서 측정하세요.</p></div>
+  </div>
+  <div class="axes" id="axes"></div>
+  <div class="tipbar" id="need" hidden>
+    <svg width="17" height="17" viewBox="0 0 17 17" aria-hidden="true">
+      <circle cx="8.5" cy="8.5" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <path d="M8.5 5v4.5M8.5 12v.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <span id="need-text"></span>
+  </div>
+</div></section>
+
+<section id="rx-sec" hidden><div class="wrap">
+  <div class="shead">
+    <span class="snum">02</span>
+    <div><h2>처방</h2><p>각 항목이 어느 측정에서 나왔는지 함께 적었습니다.</p></div>
+  </div>
+  <div class="rx">
+    <div class="rxc"><h3>색</h3><p class="why" id="rx-color-why"></p>
+      <div class="chips" id="rx-color"></div>
+      <p class="no" id="rx-color-no"></p></div>
+    <div class="rxc"><h3>넥라인</h3><p class="why" id="rx-neck-why"></p>
+      <ul id="rx-neck"></ul><p class="no" id="rx-neck-no"></p></div>
+    <div class="rxc"><h3>소재</h3><p class="why" id="rx-fab-why"></p>
+      <div class="chips" id="rx-fab"></div><p class="no" id="rx-fab-no"></p></div>
+    <div class="rxc"><h3>패턴</h3><p class="why" id="rx-pat-why"></p>
+      <div class="chips" id="rx-pat"></div><p class="no" id="rx-pat-no"></p></div>
+  </div>
+
+  <div class="fits" id="fits"></div>
+</div></section>
+
+<section id="outfit-sec" hidden><div class="wrap">
+  <div class="shead">
+    <span class="snum">03</span>
+    <div><h2>코디 조합</h2><p>팔레트 안에서만 조합했습니다. 팔레트 밖 색을 섞으면 진단이 무의미해집니다.</p></div>
+  </div>
+  <div class="outfits" id="outfits"></div>
+</div></section>
+
+<section id="shop-sec" hidden><div class="wrap">
+  <div class="shead">
+    <span class="snum">04</span>
+    <div><h2>검색어</h2><p>처방을 검색어로 옮겼습니다. 누르면 해당 쇼핑몰 검색 결과가 새 창에서 열립니다.</p></div>
+  </div>
+  <div class="qbox" id="queries"></div>
+  <p class="note" style="margin-top:12px">이 링크는 각 쇼핑몰의 <b>일반 검색 페이지</b>입니다.
+  제휴 링크가 아니며 수수료가 발생하지 않습니다. 쇼핑몰이 검색 주소 형식을 바꾸면 링크가 동작하지 않을 수 있습니다.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <p><strong>왜 상품 목록이 없나.</strong> 실제 상품 카탈로그가 아직 없습니다.
+  카탈로그 없이 브랜드·가격·재고를 지어내면 그럴듯한 가짜가 되고, 링크를 누른 사람이 손해를 봅니다.
+  그래서 &ldquo;무엇을 사야 하는지&rdquo;를 색·목선·실루엣·소재까지 특정해 주고, 구매는 실제 쇼핑몰 검색으로 넘깁니다.
+  상품 데이터가 연결되면 이 자리에 실제 상품이 들어갑니다.</p>
+  <p style="margin-top:12px"><strong>이 처방의 성격.</strong> 스타일링에서 쓰는 관습적 규칙을 측정값에 대응시킨 것이지
+  검증된 데이터에서 학습한 결과가 아닙니다. &ldquo;피할 것&rdquo;은 입으면 안 된다는 뜻이 아니라,
+  비율·색 대비로 봤을 때 덜 부각된다는 뜻입니다.</p>
+</div></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+import { neutrals, NECK, SILHOUETTE, FABRIC, patternFor, outfits, queries, SHOPS } from "./assets/style.js";
+
+const $ = id => document.getElementById(id);
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2100); }
+const load = k => { try{ return JSON.parse(localStorage.getItem(k) || "null"); }catch(e){ return null; } };
+/* 받침 유무로 조사를 고른다 — "패드은"은 틀린 한국어다 */
+function josa(w, withJong, withoutJong){
+  const c = w.charCodeAt(w.length - 1);
+  const has = c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0;
+  return w + (has ? withJong : withoutJong);
+}
+
+const color = load("pc-result"), face = load("face-result"), body = load("body-result");
+
+/* ── 01 측정 현황 ────────────────────────────────────────────── */
+const AX = [
+  { key:"퍼스널 컬러", v:color, href:"index.html", label:"퍼스널 컬러 측정하기" },
+  { key:"얼굴형",      v:face,  href:"face.html",  label:"얼굴형 측정하기" },
+  { key:"체형",        v:body,  href:"body.html",  label:"체형 측정하기" }
+];
+$("axes").innerHTML = AX.map(a =>
+  '<div class="ax' + (a.v ? " done" : "") + '"><span class="tag">' + a.key + '</span>' +
+  (a.v ? "<b>" + a.v.ko + "</b>"
+       : '<span class="miss">아직 없음</span><a href="' + a.href + '">' + a.label + " →</a>")
+  + "</div>").join("");
+
+const missing = AX.filter(a => !a.v);
+if (missing.length) {
+  $("need").hidden = false;
+  $("need-text").innerHTML = "<b>" + missing.map(a => a.key).join(", ") +
+    "</b> 측정이 남았습니다. 세 축이 모두 있어야 색·넥라인·실루엣을 함께 맞춘 처방이 나옵니다.";
+} else {
+  render();
+}
+
+/* ── 02~04 처방 ─────────────────────────────────────────────── */
+function render(){
+  ["rx-sec","outfit-sec","shop-sec"].forEach(id => $(id).hidden = false);
+  const best = color.best || [], season = color.season;
+  const N = NECK[face.key] || NECK.oval;
+  const S = SILHOUETTE[body.key] || SILHOUETTE.rectangle;
+  const F = FABRIC[season] || FABRIC.winter;
+  const PT = patternFor(color.key);
+  const NU = neutrals(season);
+
+  /* 색 */
+  $("rx-color-why").textContent = "퍼스널 컬러 " + color.ko + "에서 생성된 색입니다. 뉴트럴도 계절에 맞춰 만들었습니다.";
+  $("rx-color").innerHTML = best.slice(0, 6).concat(NU).map(c =>
+    '<span><i style="display:inline-block;width:11px;height:11px;border-radius:2px;background:' +
+    c.hex + ';border:1px solid rgba(128,128,128,.4);vertical-align:-1px;margin-right:5px"></i>' +
+    c.name + "</span>").join("");
+  $("rx-color-no").textContent = "피할 색 — " + (color.worst || []).slice(0, 3).map(c => c.name).join(", ");
+
+  /* 넥라인 */
+  $("rx-neck-why").textContent = "얼굴형 " + face.ko + " · " + N.why;
+  $("rx-neck").innerHTML = N.good.map(x => "<li>" + x + "</li>").join("");
+  $("rx-neck-no").textContent = N.avoid.length ? "피할 목선 — " + N.avoid.join(", ") : "";
+
+  /* 소재 */
+  $("rx-fab-why").textContent = color.ko + " · " + F.text;
+  $("rx-fab").innerHTML = F.ex.map(x => "<span>" + x + "</span>").join("");
+  $("rx-fab-no").textContent = "피할 소재 — " + F.avoid;
+
+  /* 패턴 */
+  $("rx-pat-why").textContent = color.ko + " · " + PT.text;
+  $("rx-pat").innerHTML = PT.ex.map(x => "<span>" + x + "</span>").join("");
+  $("rx-pat-no").textContent = "피할 패턴 — " + PT.avoid;
+
+  /* 아이템별 실루엣 */
+  $("fits").innerHTML = [
+    ["상의", S.top], ["하의", S.bottom], ["아우터", S.outer], ["원피스", S.dress]
+  ].map(([k, v]) => '<div class="fit"><span class="tag">' + k + '</span><p>' + v + "</p></div>").join("") +
+    '<div class="fit"><span class="tag">핵심</span><p>체형 ' + body.ko + "의 관건은 <b>" + S.key +
+    "</b>입니다. " + josa(S.avoid, "은", "는") + " 피하세요.</p></div>";
+
+  /* 코디 */
+  $("outfits").innerHTML = outfits(best, season).map(o =>
+    '<div class="outfit"><div class="look">' +
+    o.items.map(it => '<i class="' + (it.role === "포인트" ? "pt" : "") + '" style="background:' +
+      it.c.hex + '" title="' + it.role + " " + it.c.name + '"></i>').join("") +
+    '</div><div class="body"><h4>' + o.name + '</h4><p class="why">' + o.why + '</p><dl>' +
+    o.items.map(it => "<dt>" + it.role + "</dt><dd>" + it.c.name + " " + it.c.hex.toUpperCase() + "</dd>").join("") +
+    "</dl></div></div>").join("");
+
+  /* 검색어 */
+  const qs = queries(best[0] ? best[0].name : "베이지", face.key, body.key);
+  $("queries").innerHTML = qs.map((q, i) =>
+    '<div class="qrow"><span class="lb">' + q.label + '</span>' +
+    '<span class="q">' + q.q + "</span>" +
+    '<button data-q="' + encodeURIComponent(q.q) + '">복사</button>' +
+    '<span class="shops">' + SHOPS.map(sh =>
+      '<a href="' + sh.url(q.q) + '" target="_blank" rel="noopener noreferrer">' + sh.ko + "</a>").join("") +
+    "</span></div>").join("");
+}
+
+/* 복사 — 임베드 환경에서는 차단될 수 있으므로 성공 여부를 확인하고 알린다 */
+document.addEventListener("click", e => {
+  const b = e.target.closest ? e.target.closest("button[data-q]") : null;
+  if (!b) return;
+  const txt = decodeURIComponent(b.dataset.q);
+  const fallback = () => {
+    try{
+      const ta = document.createElement("textarea");
+      ta.value = txt; ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand && document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast(ok ? "복사됨: " + txt : "복사가 차단됐습니다. 직접 선택해 복사하세요.");
+    }catch(err){ toast("복사가 차단됐습니다. 직접 선택해 복사하세요."); }
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(txt).then(() => toast("복사됨: " + txt), fallback);
+  else fallback();
+});
+</script>

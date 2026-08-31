@@ -31,6 +31,7 @@
     <a href="index.html" aria-current="page">퍼스널 컬러</a>
     <a href="face.html">얼굴형</a>
     <a href="body.html">체형</a>
+    <a href="style.html">의류</a>
   </nav>
   <span class="pill hide-sm">D65 · sRGB</span>
   <span class="pill" id="privacy-pill">기기 안에서만 처리</span>
@@ -948,6 +949,9 @@ function render(r){
   /* 얼굴형 페이지에서 합쳐 쓰도록 저장. 사진이 아니라 결과 코드만 남긴다. */
   try{ localStorage.setItem("pc-result", JSON.stringify({
     key:r.key, ko:T.ko, en:T.en, season:T.season,
+    sig:T.sig,                       // 스타일 처방에서 색을 생성할 때 쓴다
+    best:best.map(function(x){return {hex:x.hex,name:x.name,L:x.L,C:x.C,h:x.h};}),
+    worst:worst.map(function(x){return {hex:x.hex,name:x.name};}),
     hair:hair.map(function(x){return {hex:x.hex,name:x.name};}),
     lip:lip.map(function(x){return {hex:x.hex,name:x.name};})
   })); }catch(e){}
