@@ -1,0 +1,1284 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>퍼스널컬러 측정실</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
+<style>
+/* ── 뷰잉부스 그레이 : 색 판정을 위한 중성 서라운드 ───────────── */
+:root{
+  --ground:#E6E6E8; --surface:#F3F3F5; --surface-2:#FAFAFB; --sunken:#DCDCDF;
+  --ink:#17171A; --ink-2:#54545D; --ink-3:#87878F;
+  --rule:#CFCFD5; --rule-2:#B4B4BC;
+  --accent:#2F615C; --accent-ink:#FFFFFF; --accent-soft:#D9E6E4;
+  --spring:#daa130; --summer:#0095ce; --autumn:#c6523b; --winter:#ad4baa; --season:#2F615C;
+  --shadow:0 1px 2px rgba(20,20,26,.06), 0 8px 24px -12px rgba(20,20,26,.18);
+  --step:clamp(.9rem,.6rem + .9vw,1.12rem);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#161618; --surface:#1D1D20; --surface-2:#25252A; --sunken:#0F0F11;
+    --ink:#ECECEF; --ink-2:#A1A1AA; --ink-3:#6D6D77;
+    --rule:#33333A; --rule-2:#4A4A53;
+    --accent:#6FB4AC; --accent-ink:#0E1A19; --accent-soft:#20302E;
+    --spring:#bf9610; --summer:#04a6e4; --autumn:#b43623; --winter:#cb64c8; --season:#6FB4AC;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#161618; --surface:#1D1D20; --surface-2:#25252A; --sunken:#0F0F11;
+  --ink:#ECECEF; --ink-2:#A1A1AA; --ink-3:#6D6D77;
+  --rule:#33333A; --rule-2:#4A4A53;
+  --accent:#6FB4AC; --accent-ink:#0E1A19; --accent-soft:#20302E;
+  --spring:#bf9610; --summer:#04a6e4; --autumn:#b43623; --winter:#cb64c8; --season:#6FB4AC;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+  line-height:1.62; -webkit-font-smoothing:antialiased; font-size:15.5px;
+}
+h1,h2,h3{margin:0; text-wrap:balance; font-weight:400}
+p{margin:0}
+button{font:inherit; color:inherit}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+.tag{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.16em;
+     text-transform:uppercase; color:var(--ink-3); font-weight:500}
+.wrap{max-width:1180px; margin:0 auto; padding:0 24px}
+
+/* ── 마스트헤드 ───────────────────────────────────────────── */
+.mast{border-bottom:1px solid var(--rule); background:var(--surface); position:sticky; top:0; z-index:40}
+.mast-in{display:flex; align-items:center; gap:12px; height:56px; overflow:hidden}
+#privacy-pill{min-width:0; overflow:hidden; text-overflow:ellipsis}
+.logo{min-width:0}
+.logo{display:flex; align-items:baseline; gap:9px; margin-right:auto}
+.logo b{font-family:"Gowun Batang",serif; font-weight:700; font-size:17px; letter-spacing:-.01em}
+.logo span{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.14em; color:var(--ink-3)}
+.pill{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.08em;
+      color:var(--ink-2); border:1px solid var(--rule); border-radius:2px;
+      padding:3px 8px; background:var(--surface-2); white-space:nowrap}
+@media(max-width:760px){ .hide-sm{display:none} }
+
+/* ── 히어로 ───────────────────────────────────────────────── */
+.hero{padding:54px 0 40px; border-bottom:1px solid var(--rule)}
+.hero h1{font-family:"Gowun Batang",serif; font-weight:700;
+  font-size:clamp(29px,2.1rem + 1.8vw,50px); line-height:1.24; letter-spacing:-.02em; max-width:20ch}
+.hero h1 em{font-style:normal; color:var(--accent)}
+.hero .lede{max-width:60ch; color:var(--ink-2); margin-top:18px; font-size:var(--step)}
+.hero-meta{display:flex; flex-wrap:wrap; gap:12px 26px; margin-top:26px; padding-top:20px; border-top:1px solid var(--rule)}
+.hero-meta div{display:flex; align-items:baseline; gap:8px}
+.hero-meta b{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:500}
+
+/* ── 섹션 ─────────────────────────────────────────────────── */
+section{padding:44px 0; border-bottom:1px solid var(--rule)}
+.shead{display:flex; align-items:flex-start; gap:15px; margin-bottom:24px}
+.snum{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:500; color:var(--accent);
+  border:1px solid var(--accent); border-radius:2px; padding:2px 6px; line-height:1.4; flex:none; margin-top:6px}
+.shead h2{font-family:"Gowun Batang",serif; font-weight:700; font-size:23px; letter-spacing:-.01em}
+.shead p{color:var(--ink-2); font-size:14.5px; margin-top:3px; max-width:68ch}
+
+/* ── 작업대 ───────────────────────────────────────────────── */
+.bench{display:grid; grid-template-columns:minmax(0,1.3fr) minmax(300px,1fr); gap:20px; align-items:start}
+@media(max-width:900px){ .bench{grid-template-columns:1fr} }
+.panel{background:var(--surface); border:1px solid var(--rule); border-radius:3px}
+.panel + .panel{margin-top:20px}
+.panel-h{display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--rule); background:var(--surface-2)}
+.panel-h .tag{margin-right:auto}
+.panel-b{padding:14px; display:flex; flex-direction:column; gap:12px}
+
+.stage{position:relative; background:repeating-conic-gradient(var(--sunken) 0 25%, transparent 0 50%) 0 0/16px 16px;
+  border-radius:2px; overflow:hidden; min-height:320px; display:flex; align-items:center; justify-content:center}
+.stage canvas{display:block; max-width:100%; height:auto; cursor:crosshair; touch-action:none}
+.stage.empty{border:1px dashed var(--rule-2)}
+.stage.dragover{outline:2px solid var(--accent); outline-offset:-3px}
+.drop-hint{position:absolute; inset:0; display:grid; place-content:center; justify-items:center; text-align:center; gap:9px; padding:28px; pointer-events:none}
+.drop-hint b{font-family:"Gowun Batang",serif; font-size:16px; font-weight:700}
+.drop-hint span{color:var(--ink-3); font-size:13px; max-width:36ch}
+
+.btnrow{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.btn{border:1px solid var(--rule-2); background:var(--surface-2); color:var(--ink);
+  padding:7px 13px; border-radius:2px; cursor:pointer; font-size:13.5px;
+  display:inline-flex; align-items:center; gap:7px; transition:background .15s,border-color .15s}
+.btn:hover{background:var(--surface); border-color:var(--ink-3)}
+.btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.btn[disabled]{opacity:.4; cursor:not-allowed}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:500}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.on{background:var(--accent-soft); border-color:var(--accent)}
+.seg{display:flex; border:1px solid var(--rule-2); border-radius:2px; overflow:hidden}
+.seg button{border:0; background:var(--surface-2); padding:7px 11px; cursor:pointer; font-size:13px;
+  border-right:1px solid var(--rule-2); display:flex; align-items:center; gap:7px}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent-soft); font-weight:500}
+.seg button:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+.swatch-dot{width:9px; height:9px; border-radius:50%; border:1px solid rgba(128,128,128,.5); flex:none}
+
+/* 계측 리드아웃 */
+.readout{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:2px}
+.cell{background:var(--surface); padding:10px 12px}
+.cell .tag{display:block; margin-bottom:2px}
+.cell .v{font-family:"IBM Plex Mono",monospace; font-size:18px; font-weight:500; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+.cell .u{font-size:11px; color:var(--ink-3); margin-left:2px}
+.cell.wide{grid-column:1/-1}
+.chip{display:flex; align-items:center; gap:10px}
+.chip i{width:36px; height:36px; border-radius:2px; border:1px solid var(--rule-2); flex:none; display:block}
+.chip .mono{font-size:12px; color:var(--ink-2)}
+.note{font-size:12.5px; color:var(--ink-3); line-height:1.55}
+.note code{font-family:"IBM Plex Mono",monospace; font-size:11.5px; background:var(--surface-2);
+  border:1px solid var(--rule); padding:1px 4px; border-radius:2px; color:var(--ink-2)}
+.pts{display:flex; flex-direction:column; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:2px}
+.pt{display:flex; align-items:center; gap:9px; background:var(--surface); padding:7px 10px; font-size:12.5px}
+.pt i{width:16px; height:16px; border-radius:2px; border:1px solid var(--rule-2); flex:none}
+.pt .k{color:var(--ink-2); width:56px; flex:none}
+.pt .m{font-family:"IBM Plex Mono",monospace; color:var(--ink-3); margin-left:auto; font-size:11.5px}
+.pt button{background:none; border:0; color:var(--ink-3); cursor:pointer; padding:0 3px; font-size:16px; line-height:1}
+.pt button:hover{color:var(--ink)}
+.empty-line{background:var(--surface); padding:10px; font-size:12.5px; color:var(--ink-3); text-align:center}
+
+/* ── 판정 ─────────────────────────────────────────────────── */
+#result[hidden]{display:none}
+.verdict{display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,340px); gap:26px; align-items:start}
+@media(max-width:860px){ .verdict{grid-template-columns:1fr} }
+.verdict-name{font-family:"Gowun Batang",serif; font-weight:700; letter-spacing:-.025em;
+  font-size:clamp(34px,2.2rem + 3vw,64px); line-height:1.1; color:var(--season)}
+.verdict-en{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--ink-3); margin-top:10px}
+.verdict-desc{margin-top:16px; font-size:var(--step); color:var(--ink-2); max-width:56ch}
+.season-rule{height:3px; background:var(--season); margin:22px 0 0; border-radius:2px; max-width:120px}
+
+.conf{border:1px solid var(--rule); border-radius:3px; background:var(--surface); overflow:hidden}
+.conf-top{padding:13px 15px; border-bottom:1px solid var(--rule); background:var(--surface-2)}
+.conf-val{font-family:"IBM Plex Mono",monospace; font-size:30px; font-weight:500; line-height:1.1; letter-spacing:-.02em}
+.conf-bar{height:5px; background:var(--sunken); border-radius:3px; overflow:hidden; margin-top:9px}
+.conf-bar i{display:block; height:100%; background:var(--accent); border-radius:3px; transition:width .5s ease}
+.conf ul{list-style:none; margin:0; padding:11px 15px; display:flex; flex-direction:column; gap:7px}
+.conf li{font-size:12.5px; color:var(--ink-2); display:flex; gap:8px; align-items:flex-start; line-height:1.5}
+.conf li b{font-family:"IBM Plex Mono",monospace; font-size:11px; flex:none; width:16px; text-align:center}
+.conf li.ok b{color:var(--accent)}
+.conf li.warn b{color:var(--autumn)}
+
+/* 차트 */
+.charts{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1px; background:var(--rule);
+  border:1px solid var(--rule); border-radius:3px; margin-top:30px; overflow:hidden}
+.chart{background:var(--surface); padding:16px 16px 14px; display:flex; flex-direction:column; gap:10px; min-width:0}
+.chart-h{display:flex; align-items:baseline; gap:9px}
+.chart-h .tag{margin-right:auto}
+.chart-h .rv{font-family:"IBM Plex Mono",monospace; font-size:12.5px; font-weight:500}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.chart-note{font-size:11.5px; color:var(--ink-3); line-height:1.5}
+.axis-lab{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.06em; fill:var(--ink-3)}
+.zone-lab{font-family:"IBM Plex Sans KR",sans-serif; font-size:11px; font-weight:500}
+.grid-l{stroke:var(--rule); stroke-width:1}
+.mark-ring{stroke:var(--surface); stroke-width:2.5}
+
+/* 팔레트 */
+.pal-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:1px; background:var(--rule);
+  border:1px solid var(--rule); border-radius:3px; overflow:hidden}
+.sw{background:var(--surface); display:flex; flex-direction:column; cursor:pointer; border:0; padding:0; text-align:left; transition:transform .15s}
+.sw:hover{z-index:2}
+.sw:focus-visible{outline:2px solid var(--accent); outline-offset:-2px; z-index:3}
+.sw i{display:block; height:66px}
+.sw span{padding:7px 9px 8px; display:flex; flex-direction:column; gap:1px}
+.sw .nm{font-size:12px; line-height:1.35}
+.sw .hx{font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--ink-3); letter-spacing:.02em}
+.sw.avoid i{height:44px}
+
+.cols3{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; margin-top:8px}
+.block h3{font-family:"Gowun Batang",serif; font-weight:700; font-size:16px; margin-bottom:10px}
+.block .tag{display:block; margin-bottom:9px}
+
+/* 드레이프 */
+.drape{display:grid; grid-template-columns:minmax(0,1fr) minmax(240px,300px); gap:20px; align-items:start}
+@media(max-width:820px){ .drape{grid-template-columns:1fr} }
+.drape-stage{border:1px solid var(--rule); border-radius:3px; overflow:hidden; background:var(--surface)}
+.drape-stage canvas{display:block; width:100%; height:auto}
+.drape-strip{display:flex; flex-wrap:wrap; gap:6px}
+.drape-strip button{width:34px; height:34px; border:1px solid var(--rule-2); border-radius:2px; cursor:pointer; padding:0}
+.drape-strip button[aria-pressed="true"]{outline:2px solid var(--ink); outline-offset:2px}
+.drape-strip button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* 표 */
+details.table-view{margin-top:26px; border:1px solid var(--rule); border-radius:3px; background:var(--surface)}
+details.table-view summary{padding:11px 15px; cursor:pointer; font-size:13.5px; color:var(--ink-2); list-style:none; display:flex; align-items:center; gap:8px}
+details.table-view summary::-webkit-details-marker{display:none}
+details.table-view summary::before{content:"▸"; font-size:11px; color:var(--ink-3)}
+details.table-view[open] summary::before{content:"▾"}
+details.table-view summary:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+.tbl-scroll{overflow-x:auto; border-top:1px solid var(--rule)}
+table{border-collapse:collapse; width:100%; font-size:13px; min-width:460px}
+th,td{text-align:left; padding:8px 15px; border-bottom:1px solid var(--rule)}
+th{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); font-weight:500}
+td.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:0}
+
+/* 방법론 */
+.method{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:22px}
+.method .step-n{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.14em; color:var(--accent); display:block; margin-bottom:7px}
+.method h3{font-family:"Gowun Batang",serif; font-weight:700; font-size:15.5px; margin-bottom:6px}
+.method p{font-size:13.5px; color:var(--ink-2); line-height:1.6}
+.method code{font-family:"IBM Plex Mono",monospace; font-size:11.5px; background:var(--surface); border:1px solid var(--rule); padding:1px 4px; border-radius:2px; color:var(--ink)}
+
+footer{padding:34px 0 48px; color:var(--ink-3); font-size:12.5px; line-height:1.7}
+footer strong{color:var(--ink-2); font-weight:500}
+.toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(12px); opacity:0;
+  background:var(--ink); color:var(--ground); padding:9px 16px; border-radius:3px; font-size:13px;
+  pointer-events:none; transition:opacity .2s, transform .2s; z-index:90; box-shadow:var(--shadow)}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion:reduce){ *{transition-duration:.01ms !important; animation-duration:.01ms !important} }
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+</style>
+
+<div class="mast"><div class="wrap mast-in">
+  <span class="logo"><b>퍼스널컬러 측정실</b><span>CIELAB · ITA°</span></span>
+  <span class="pill hide-sm">D65 · sRGB</span>
+  <span class="pill" id="privacy-pill">기기 안에서만 처리</span>
+</div></div>
+
+<header class="hero"><div class="wrap">
+  <h1>피부색은 사람마다 다릅니다.<br><em>그래서 재야 합니다.</em></h1>
+  <p class="lede">눈대중으로 “웜톤 같다”고 말하는 대신, 사진에서 피부 화소를 골라내
+  조명을 보정하고 CIELAB 좌표로 환산합니다. 명도 L*, 색상각 h°, 채도 C*, 피부색 분류 지표 ITA°
+  네 값으로 4계절 12타입을 판정하고, 그 사람의 측정값에서 직접 팔레트를 생성합니다.</p>
+  <div class="hero-meta">
+    <div><span class="tag">색공간</span><b>CIE L*a*b* / D65</b></div>
+    <div><span class="tag">분류축</span><b>4</b></div>
+    <div><span class="tag">타입</span><b>12</b></div>
+    <div><span class="tag">전송</span><b>0 byte</b></div>
+  </div>
+</div></header>
+
+<section id="capture"><div class="wrap">
+  <div class="shead">
+    <span class="snum">01</span>
+    <div>
+      <h2>표본 확보</h2>
+      <p>정면·무보정·민낯에 가까울수록 정확합니다. 창가의 낮 간접광이 가장 좋고, 형광등·백열등·필터는 색상각을 통째로 밀어버립니다.
+      흰 종이나 흰 티셔츠가 화면에 같이 찍혀 있으면 화이트밸런스를 훨씬 정확히 잡을 수 있습니다.</p>
+    </div>
+  </div>
+
+  <div class="bench">
+    <div class="panel">
+      <div class="panel-h">
+        <span class="tag">Specimen</span>
+        <span class="pill mono" id="dims">—</span>
+      </div>
+      <div class="panel-b">
+        <div class="stage empty" id="stage">
+          <canvas id="cv" width="640" height="420"></canvas>
+          <div class="drop-hint" id="hint">
+            <b>사진을 여기에 끌어다 놓으세요</b>
+            <span>또는 아래에서 파일을 고르거나 카메라를 켜세요. 이미지는 브라우저 안에서만 처리되며 어디에도 전송되지 않습니다.</span>
+          </div>
+        </div>
+        <div class="btnrow">
+          <button class="btn primary" id="btn-file">사진 불러오기</button>
+          <button class="btn" id="btn-cam">카메라 켜기</button>
+          <button class="btn" id="btn-shot" hidden>촬영</button>
+          <button class="btn" id="btn-demo">예시로 둘러보기</button>
+          <input type="file" id="file" accept="image/*" class="sr">
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="panel-h"><span class="tag">White balance</span></div>
+        <div class="panel-b">
+          <div class="seg" role="group" aria-label="화이트밸런스 방식">
+            <button id="wb-auto" aria-pressed="true">자동 보정</button>
+            <button id="wb-pick" aria-pressed="false">흰색 지정</button>
+            <button id="wb-off" aria-pressed="false">보정 없음</button>
+          </div>
+          <p class="note" id="wb-note">Shades-of-Gray(민코프스키 <code>p=6</code>) 방식으로 광원 색을 추정해 상쇄합니다.
+          화면에 흰 종이가 있다면 <b>흰색 지정</b>을 누르고 그 부분을 클릭하는 편이 더 정확합니다.</p>
+          <div class="readout">
+            <div class="cell"><span class="tag">R gain</span><span class="v mono" id="gr">1.00</span></div>
+            <div class="cell"><span class="tag">B gain</span><span class="v mono" id="gb">1.00</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section id="sample"><div class="wrap">
+  <div class="shead">
+    <span class="snum">02</span>
+    <div>
+      <h2>피부 화소 채취</h2>
+      <p>자동 검출은 YCbCr·HSV 규칙으로 피부 화소를 골라낸 뒤 반사광(하이라이트)과 그림자를 잘라내고 중앙값을 씁니다.
+      더 정확하게 하려면 <b>이마·양 볼·턱</b>을 직접 찍으세요. <b>머리카락</b>과 <b>눈동자</b>까지 찍으면 명도 대비를 계산해
+      계절 안의 세부 타입(라이트·브라이트·뮤트·딥)까지 갈라낼 수 있습니다.</p>
+    </div>
+  </div>
+
+  <div class="bench">
+    <div class="panel">
+      <div class="panel-h"><span class="tag">Sampling</span><span class="pill mono" id="px-count">피부 화소 0</span></div>
+      <div class="panel-b">
+        <div class="seg" role="group" aria-label="채취 대상">
+          <button id="m-skin" aria-pressed="true"><i class="swatch-dot" style="background:#C89A72"></i>피부</button>
+          <button id="m-hair" aria-pressed="false"><i class="swatch-dot" style="background:#3A2A22"></i>머리카락</button>
+          <button id="m-eye" aria-pressed="false"><i class="swatch-dot" style="background:#5B3A24"></i>눈동자</button>
+        </div>
+        <div class="btnrow">
+          <button class="btn on" id="btn-mask">피부 마스크 보기</button>
+          <button class="btn" id="btn-undo">마지막 점 취소</button>
+          <button class="btn" id="btn-clear">점 모두 지우기</button>
+        </div>
+        <p class="note">캔버스를 클릭하면 반지름 <code>9px</code> 원 안의 중앙값을 채취합니다. 점이 하나라도 있으면 자동 검출값 대신 채취한 점을 씁니다.</p>
+        <div class="pts" id="pts"><div class="empty-line">채취한 점 없음 — 자동 검출값 사용 중</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><span class="tag">Readout</span></div>
+      <div class="panel-b">
+        <div class="chip">
+          <i id="sk-chip" style="background:var(--sunken)"></i>
+          <div><div class="tag">측정된 피부색</div><div class="mono" id="sk-hex">—</div></div>
+        </div>
+        <div class="readout">
+          <div class="cell"><span class="tag">L* 명도</span><span class="v mono" id="v-L">—</span></div>
+          <div class="cell"><span class="tag">ITA° 피부심도</span><span class="v mono" id="v-ita">—</span></div>
+          <div class="cell"><span class="tag">h° 색상각</span><span class="v mono" id="v-hue">—</span></div>
+          <div class="cell"><span class="tag">C* 채도</span><span class="v mono" id="v-c">—</span></div>
+          <div class="cell"><span class="tag">a* 적색(혈색)</span><span class="v mono" id="v-a">—</span></div>
+          <div class="cell"><span class="tag">b* 황색(멜라닌)</span><span class="v mono" id="v-b">—</span></div>
+          <div class="cell wide"><span class="tag">명도 대비 (피부 − 머리카락)</span><span class="v mono" id="v-ct">—</span><span class="u" id="v-ct-src">머리카락 미채취</span></div>
+        </div>
+        <button class="btn primary" id="btn-run" disabled style="justify-content:center">퍼스널 컬러 판정하기</button>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section id="result" hidden><div class="wrap">
+  <div class="shead">
+    <span class="snum">03</span>
+    <div><h2>판정</h2><p>세 축의 측정값이 12타입 중 하나로 수렴한 결과입니다. 아래 지표를 눌러 근거를 직접 확인할 수 있습니다.</p></div>
+  </div>
+
+  <div class="verdict">
+    <div>
+      <div class="verdict-name" id="r-name">—</div>
+      <div class="verdict-en mono" id="r-en">—</div>
+      <div class="season-rule"></div>
+      <p class="verdict-desc" id="r-desc"></p>
+    </div>
+    <div class="conf">
+      <div class="conf-top">
+        <span class="tag">판정 신뢰도</span>
+        <div class="conf-val"><span id="c-val">0</span><span class="u" style="font-size:14px">/100</span></div>
+        <div class="conf-bar"><i id="c-bar" style="width:0%"></i></div>
+      </div>
+      <ul id="c-list"></ul>
+    </div>
+  </div>
+
+  <div class="charts" id="charts">
+    <div class="chart">
+      <div class="chart-h"><span class="tag">계절 좌표</span><span class="rv mono" id="rv-map">—</span></div>
+      <svg id="ch-map" viewBox="0 0 320 210" role="img" aria-labelledby="map-t"><title id="map-t">웜쿨 지수와 명도로 본 계절 위치</title></svg>
+      <p class="chart-note">가로축은 색상각에서 얻은 웜–쿨 지수, 세로축은 피부 명도 L*. 네 구역은 계절, 점은 당신의 좌표입니다.</p>
+    </div>
+    <div class="chart">
+      <div class="chart-h"><span class="tag">ITA° 피부 심도</span><span class="rv mono" id="rv-ita">—</span></div>
+      <svg id="ch-ita" viewBox="0 0 320 108" role="img" aria-labelledby="ita-t"><title id="ita-t">피부 심도 ITA 각도 척도</title></svg>
+      <p class="chart-note">피부과 문헌의 개체유형각(Individual Typology Angle). 값이 클수록 밝은 피부, 작을수록 짙은 피부입니다.</p>
+    </div>
+    <div class="chart">
+      <div class="chart-h"><span class="tag">웜–쿨 축</span><span class="rv mono" id="rv-wc">—</span></div>
+      <svg id="ch-wc" viewBox="0 0 320 96" role="img" aria-labelledby="wc-t"><title id="wc-t">웜쿨 발산 척도</title></svg>
+      <p class="chart-note">b*(황) 대비 a*(적)의 각도. 가운데 회색이 중립, 오른쪽이 노란기(웜), 왼쪽이 붉은기·푸른기(쿨)입니다.</p>
+    </div>
+    <div class="chart">
+      <div class="chart-h"><span class="tag">선명도 축</span><span class="rv mono" id="rv-cl">—</span></div>
+      <svg id="ch-cl" viewBox="0 0 320 96" role="img" aria-labelledby="cl-t"><title id="cl-t">뮤트 대 브라이트 발산 척도</title></svg>
+      <p class="chart-note">피부·머리카락·눈동자의 명도 대비와 채도. 대비가 크면 선명한 색(브라이트), 작으면 흐린 색(뮤트)이 어울립니다.</p>
+    </div>
+  </div>
+
+  <details class="table-view">
+    <summary>측정값 표로 보기</summary>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>지표</th><th>값</th><th>단위 / 범위</th><th>해석</th></tr></thead>
+      <tbody id="tbl-body"></tbody>
+    </table></div>
+  </details>
+</div></section>
+
+<section id="palette"><div class="wrap">
+  <div class="shead">
+    <span class="snum">04</span>
+    <div><h2>팔레트</h2><p>일반적인 시즌 색표를 그대로 보여주는 대신, 판정된 타입의 명도·채도 시그니처를 12개 색상환에 적용해
+    <b>측정값에서 직접 생성</b>한 색들입니다. 색을 누르면 색상 코드가 복사되고, 아래 드레이프에 적용됩니다.</p></div>
+  </div>
+  <div class="tag" style="margin-bottom:9px">Best — 얼굴을 밝히는 색</div>
+  <div class="pal-grid" id="pal-best"></div>
+  <div class="cols3" style="margin-top:26px">
+    <div class="block"><span class="tag">Avoid — 얼굴을 눌러앉히는 색</span><div class="pal-grid" id="pal-worst"></div></div>
+    <div class="block"><span class="tag">Lip — 립 컬러</span><div class="pal-grid" id="pal-lip"></div></div>
+    <div class="block"><span class="tag">Hair — 헤어 컬러</span><div class="pal-grid" id="pal-hair"></div></div>
+  </div>
+  <div class="cols3" style="margin-top:26px">
+    <div class="block"><h3>베이스 메이크업</h3><div class="pal-grid" id="pal-base"></div>
+      <p class="note" style="margin-top:9px" id="base-note"></p></div>
+    <div class="block"><h3>금속 · 액세서리</h3><div class="pal-grid" id="pal-metal"></div>
+      <p class="note" style="margin-top:9px" id="metal-note"></p></div>
+  </div>
+</div></section>
+
+<section id="drape-sec"><div class="wrap">
+  <div class="shead">
+    <span class="snum">05</span>
+    <div><h2>드레이핑</h2><p>실제 진단실에서 천을 목 밑에 대보는 그 과정입니다. 색을 바꿔가며 얼굴의 그늘, 팔자주름, 다크서클,
+    입술 혈색이 어떻게 달라지는지 보세요. 베스트 색에서는 얼굴이 또렷해지고, 워스트 색에서는 노랗게 뜨거나 칙칙해집니다.</p></div>
+  </div>
+  <div class="drape">
+    <div class="drape-stage"><canvas id="drape-cv" width="800" height="500"></canvas></div>
+    <div>
+      <div class="panel"><div class="panel-h"><span class="tag">Drape</span></div><div class="panel-b">
+        <div class="seg" role="group" aria-label="드레이프 비교">
+          <button id="d-best" aria-pressed="true">베스트</button>
+          <button id="d-worst" aria-pressed="false">워스트</button>
+          <button id="d-split" aria-pressed="false">좌우 비교</button>
+        </div>
+        <div class="drape-strip" id="drape-strip"></div>
+        <p class="note">사진이 없으면 회색 표본이 표시됩니다. 01단계에서 사진을 불러오면 실제 얼굴로 비교할 수 있습니다.</p>
+      </div></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="method"><div class="wrap">
+  <div class="shead"><span class="snum">06</span><div><h2>계산 방식</h2>
+  <p>추측을 줄이려고 각 단계를 공개합니다. 값이 이상하면 어느 단계에서 어긋났는지 되짚을 수 있습니다.</p></div></div>
+  <div class="method">
+    <div><span class="step-n">STEP 1</span><h3>광원 상쇄</h3>
+      <p>선형 RGB에서 채널별 <code>(mean cⁿ)^(1/n)</code>, n=6을 구해 회색이 회색이 되도록 이득을 곱합니다.
+      휘도는 보존하므로 밝기는 그대로 두고 색만 중립화합니다.</p></div>
+    <div><span class="step-n">STEP 2</span><h3>피부 화소 선별</h3>
+      <p><code>Cr 128–185</code>, <code>Cb 72–138</code>, 색상 −25°–60°, 채도 0.08–0.9를 만족하고 R≥B인 화소만 남깁니다.
+      매우 어두운 피부에서 무너지는 <code>R−G</code> 문턱값 대신 색차 조건을 주로 써서 전 색역을 다룹니다.</p></div>
+    <div><span class="step-n">STEP 3</span><h3>이상치 절단</h3>
+      <p>선별된 화소 중 밝은 쪽 상위 8%(정반사 하이라이트)와 어두운 쪽 하위 12%(그림자)를 버리고
+      남은 값의 <b>중앙값</b>을 씁니다. 평균은 조명 반사 하나에 통째로 끌려갑니다.</p></div>
+    <div><span class="step-n">STEP 4</span><h3>Lab 환산</h3>
+      <p>sRGB를 선형화해 D65 기준 XYZ로 옮기고 CIE L*a*b*로 변환합니다.
+      <code>ITA = atan2(L−50, b) × 180/π</code>, <code>h = atan2(b, a)</code>, <code>C = √(a²+b²)</code>.</p></div>
+    <div><span class="step-n">STEP 5</span><h3>세 축 판정</h3>
+      <p>웜–쿨은 색상각 54° 기준, 명도는 L*와 ITA°, 선명도는 피부·머리카락 명도차와 눈동자 채도로 계산합니다.
+      세 축이 12타입 격자 위의 한 칸을 지정합니다.</p></div>
+    <div><span class="step-n">STEP 6</span><h3>팔레트 생성</h3>
+      <p>타입의 <code>(L*, C*, 색상 편향)</code> 시그니처를 12개 기준 색상에 적용하고, sRGB 밖으로 나가면
+      채도를 0.5씩 낮춰 색역 안으로 넣습니다. 그래서 팔레트가 서로 어긋나지 않습니다.</p></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <p><strong>정확도에 대해.</strong> 이 도구는 사진 한 장의 화소를 재는 것이지, 표준광원 부스에서 분광측색계로 재는 것이 아닙니다.
+  카메라 톤커브·미백 필터·색보정된 조명은 색상각을 5–10° 밀 수 있고, 그 정도면 판정이 옆 타입으로 넘어갑니다.
+  자연광 무보정 사진을 두세 장 넣어 결과가 같게 나오는지 확인하는 것이 가장 현실적인 검증법입니다.</p>
+  <p style="margin-top:12px"><strong>기록에 대해.</strong> 사진·측정값 모두 브라우저 메모리에서만 처리되며 서버로 전송되거나 저장되지 않습니다.
+  탭을 닫으면 사라집니다.</p>
+</div></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+"use strict";
+/* ══ 1. 색채 수학 ══════════════════════════════════════════════ */
+var Xn=0.95047, Yn=1.0, Zn=1.08883;
+function s2l(c){c/=255; return c<=0.04045? c/12.92 : Math.pow((c+0.055)/1.055,2.4);}
+function l2s(c){c=Math.max(0,Math.min(1,c)); return (c>0.0031308? 1.055*Math.pow(c,1/2.4)-0.055 : 12.92*c)*255;}
+function fwd(t){return t>0.008856? Math.cbrt(t) : 7.787*t + 16/116;}
+function inv(t){var c=t*t*t; return c>0.008856? c : (t-16/116)/7.787;}
+
+function rgb2lab(r,g,b){
+  var R=s2l(r),G=s2l(g),B=s2l(b);
+  var X=(0.4124564*R+0.3575761*G+0.1804375*B)/Xn;
+  var Y=(0.2126729*R+0.7151522*G+0.0721750*B)/Yn;
+  var Z=(0.0193339*R+0.1191920*G+0.9503041*B)/Zn;
+  var fx=fwd(X),fy=fwd(Y),fz=fwd(Z);
+  return [116*fy-16, 500*(fx-fy), 200*(fy-fz)];
+}
+function lab2rgb(L,a,b){
+  var fy=(L+16)/116, fx=fy+a/500, fz=fy-b/200;
+  var X=Xn*inv(fx), Y=Yn*inv(fy), Z=Zn*inv(fz);
+  return [ 3.2404542*X-1.5371385*Y-0.4985314*Z,
+          -0.9692660*X+1.8760108*Y+0.0415560*Z,
+           0.0556434*X-0.2040259*Y+1.0572252*Z];
+}
+function inGamut(L,a,b){var c=lab2rgb(L,a,b); return c[0]>=-0.002&&c[0]<=1.002&&c[1]>=-0.002&&c[1]<=1.002&&c[2]>=-0.002&&c[2]<=1.002;}
+function hex2(n){n=Math.round(n); n=n<0?0:n>255?255:n; return (n<16?"0":"")+n.toString(16);}
+function labHex(L,a,b){var c=lab2rgb(L,a,b); return "#"+hex2(l2s(c[0]))+hex2(l2s(c[1]))+hex2(l2s(c[2]));}
+/* LCH → sRGB, 색역 밖이면 채도를 0.5씩 낮춰 안으로 집어넣음 */
+function lchHex(L,C,h){
+  var r=h*Math.PI/180, cc=C;
+  while(cc>0 && !inGamut(L, cc*Math.cos(r), cc*Math.sin(r))) cc-=0.5;
+  return labHex(L, cc*Math.cos(r), cc*Math.sin(r));
+}
+function hex2rgb(x){return [parseInt(x.substr(1,2),16),parseInt(x.substr(3,2),16),parseInt(x.substr(5,2),16)];}
+function labOf(x){var c=hex2rgb(x); return rgb2lab(c[0],c[1],c[2]);}
+function clamp(v,a,b){return v<a?a:v>b?b:v;}
+function norm(v,a,b){return clamp((v-a)/(b-a),0,1);}
+
+function metrics(lab){
+  var L=lab[0],a=lab[1],b=lab[2];
+  return {L:L,a:a,b:b,
+    C:Math.sqrt(a*a+b*b),
+    h:(Math.atan2(b,a)*180/Math.PI+360)%360,
+    ita:Math.atan2(L-50,b)*180/Math.PI};
+}
+
+/* 색상각 → 한국어 색 이름 */
+/* 색상환을 22구간으로 잘라 한 팔레트 안에서 같은 이름이 겹치지 않게 한다 */
+var HUE_NAMES=[[12,"로즈"],[26,"코랄"],[40,"애프리콧"],[52,"오렌지"],[64,"앰버"],[78,"골드"],
+  [92,"머스터드"],[112,"라임"],[134,"그린"],[150,"에메랄드"],[172,"제이드"],[190,"틸"],
+  [206,"터콰이즈"],[224,"아쿠아"],[240,"스카이블루"],[256,"블루"],[274,"코발트"],[292,"인디고"],
+  [308,"바이올렛"],[326,"오키드"],[344,"마젠타"],[361,"플럼로즈"]];
+function hueName(h){h=((h%360)+360)%360; for(var i=0;i<HUE_NAMES.length;i++) if(h<HUE_NAMES[i][0]) return HUE_NAMES[i][1]; return "로즈";}
+function colorName(L,C,h){
+  h=((h%360)+360)%360;
+  var base=hueName(h);
+  /* 어두워지면 색 이름 자체가 바뀐다 — 어두운 주황은 라임이 아니라 브라운이다 */
+  if(L<50){
+    if(h>=338) base="버건디";
+    else if(h<10) base="마룬";
+    else if(h<34) base="마호가니";
+    else if(h<50) base="러셋";
+    else if(h<62) base="브라운";
+    else if(h<78) base="브론즈";
+    else if(h<98) base="카키";
+    else if(h<122) base="올리브";
+    else if(h<140) base="포레스트";
+    else if(h<160) base="파인";
+  }
+  var q="";
+  if(L>76) q="라이트 "; else if(L<40) q="딥 ";
+  else if(C<24) q="더스티 "; else if(C>72) q="비비드 ";
+  return (q+base).trim();
+}
+
+/* ══ 2. 12타입 정의 ════════════════════════════════════════════ */
+var HUES={
+  spring:[32,48,64,84,104,136,162,192,216,244,332,352],
+  summer:[344,320,292,266,240,214,194,170,146,12,32,64],
+  autumn:[26,42,58,74,92,112,150,180,202,340,14,300],
+  winter:[356,334,310,286,260,234,210,186,160,140,20,44]
+};
+var TYPES={
+  "spring-light":{ko:"봄 라이트",en:"Spring Light",season:"spring",sig:{L:80,C:42,bias:6},bad:{L:40,C:20,bias:-30},
+    desc:"밝고 맑은 웜톤. 색이 조금만 무거워져도 얼굴이 눌립니다. 채도보다 밝기가 우선이라, 같은 코랄이라도 한 톤 밝은 쪽이 답입니다. 검정 대신 아이보리와 카멜을, 진회색 대신 웜 베이지를 쓰세요."},
+  "spring-bright":{ko:"봄 브라이트",en:"Spring Bright",season:"spring",sig:{L:70,C:66,bias:6},bad:{L:52,C:18,bias:-24},
+    desc:"맑고 선명한 웜톤. 흐린 색을 입으면 얼굴이 같이 흐려지고, 채도가 살아 있는 색에서 눈매가 또렷해집니다. 파스텔보다 크레용 같은 색, 탁한 중간색은 피하세요."},
+  "spring-vivid":{ko:"봄 비비드",en:"Spring Vivid",season:"spring",sig:{L:62,C:82,bias:8},bad:{L:56,C:14,bias:-20},
+    desc:"12타입 중 가장 채도가 높은 웜톤. 웬만한 색은 이 사람에게 지고, 원색에 가까운 색에서 비로소 균형이 맞습니다. 무채색과 중간 채도는 오히려 얼굴을 지웁니다."},
+  "summer-light":{ko:"여름 라이트",en:"Summer Light",season:"summer",sig:{L:80,C:28,bias:-8},bad:{L:38,C:52,bias:34},
+    desc:"밝고 부드러운 쿨톤. 옅은 파우더 톤에서 피부가 투명해 보이고, 진한 색이나 노란기 도는 색에서 얼굴이 붉거나 칙칙해집니다. 검정보다 소프트 네이비, 골드보다 실버."},
+  "summer-bright":{ko:"여름 브라이트",en:"Summer Bright",season:"summer",sig:{L:68,C:48,bias:-10},bad:{L:46,C:30,bias:40},
+    desc:"쿨하면서 어느 정도 채도를 감당하는 타입. 여름의 부드러움과 겨울의 또렷함 사이에 있어, 맑은 블루·라즈베리 계열이 잘 받습니다. 노란기 섞인 색만은 확실히 피하세요."},
+  "summer-mute":{ko:"여름 뮤트",en:"Summer Mute",season:"summer",sig:{L:66,C:22,bias:-8},bad:{L:50,C:74,bias:30},
+    desc:"채도가 낮고 회색이 섞인 쿨톤. 색이 선명해지는 순간 얼굴보다 옷이 먼저 보입니다. 그레이시 라벤더, 세이지, 더스티 로즈처럼 한 겹 가라앉은 색이 정답입니다."},
+  "autumn-mute":{ko:"가을 뮤트",en:"Autumn Mute",season:"autumn",sig:{L:58,C:32,bias:10},bad:{L:78,C:52,bias:-40},
+    desc:"노란기가 도는 낮은 채도의 웜톤. 카키·테라코타·머스터드처럼 흙이 섞인 색에서 안색이 정리됩니다. 형광 느낌의 밝은 색과 차가운 파스텔이 가장 위험합니다."},
+  "autumn-strong":{ko:"가을 스트롱",en:"Autumn Strong",season:"autumn",sig:{L:52,C:54,bias:10},bad:{L:80,C:26,bias:-40},
+    desc:"깊이와 채도를 함께 감당하는 웜톤. 러스트, 올리브, 포레스트 그린 같은 진한 색에서 얼굴이 또렷해집니다. 옅은 파스텔은 존재감을 지워버립니다."},
+  "autumn-deep":{ko:"가을 딥",en:"Autumn Deep",season:"autumn",sig:{L:40,C:46,bias:8},bad:{L:82,C:24,bias:-36},
+    desc:"어둡고 따뜻한 색이 가장 잘 받는 타입. 다크 초콜릿, 딥 올리브, 와인 브라운에서 피부가 매끄럽게 보입니다. 밝고 차가운 색은 얼굴을 붕 뜨게 만듭니다."},
+  "winter-bright":{ko:"겨울 브라이트",en:"Winter Bright",season:"winter",sig:{L:60,C:72,bias:-12},bad:{L:62,C:20,bias:36},
+    desc:"차갑고 선명한 색이 어울리는 고대비 타입. 트루 레드, 로열 블루, 퓨어 화이트처럼 흐림이 없는 색에서 이목구비가 살아납니다. 베이지·카키 같은 탁한 웜은 피부를 누렇게 만듭니다."},
+  "winter-vivid":{ko:"겨울 비비드",en:"Winter Vivid",season:"winter",sig:{L:52,C:90,bias:-14},bad:{L:64,C:16,bias:32},
+    desc:"대비가 가장 강한 타입. 푸시아, 일렉트릭 블루, 순백처럼 채도가 끝까지 올라간 색을 이깁니다. 중간 채도의 어중간한 색에서 오히려 피곤해 보입니다."},
+  "winter-deep":{ko:"겨울 딥",en:"Winter Deep",season:"winter",sig:{L:34,C:52,bias:-12},bad:{L:80,C:30,bias:34},
+    desc:"짙고 차가운 색이 중심인 타입. 블랙, 딥 버건디, 미드나이트 네이비가 부담이 아니라 기본값입니다. 밝고 노란 파스텔은 얼굴을 흐리게 만듭니다."}
+};
+var SEASON_KO={spring:"봄 웜",summer:"여름 쿨",autumn:"가을 웜",winter:"겨울 쿨"};
+
+/* ══ 3. 상태 ═══════════════════════════════════════════════════ */
+var S={img:null, w:0, h:0, base:null, corr:null, gain:[1,1,1],
+  wbMode:"auto", pickWhite:false, mode:"skin", showMask:true,
+  pts:[], autoSkin:null, skinPx:0, mask:null, res:null, drape:"best", drapeIdx:0, stream:null};
+
+var $=function(id){return document.getElementById(id);};
+var cv=$("cv"), ctx=cv.getContext("2d",{willReadFrequently:true});
+
+function toast(msg){var t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove("show");},1900);}
+
+/* ══ 4. 이미지 적재 ════════════════════════════════════════════ */
+function loadImage(src){
+  var im=new Image();
+  im.onload=function(){ setImage(im); };
+  im.onerror=function(){ toast("이미지를 읽지 못했습니다."); };
+  im.src=src;
+}
+function setImage(im){
+  var MAX=760, sc=Math.min(1, MAX/Math.max(im.width,im.height));
+  S.w=Math.round(im.width*sc); S.h=Math.round(im.height*sc);
+  cv.width=S.w; cv.height=S.h;
+  ctx.drawImage(im,0,0,S.w,S.h);
+  S.base=ctx.getImageData(0,0,S.w,S.h);
+  S.img=im; S.pts=[];
+  $("hint").style.display="none";
+  $("stage").classList.remove("empty");
+  $("dims").textContent=S.w+" × "+S.h+" px";
+  applyWB();
+}
+
+/* ══ 5. 화이트밸런스 ═══════════════════════════════════════════ */
+function applyWB(whitePx){
+  if(!S.base) return;
+  var d=S.base.data, n=d.length, i;
+  var g=[1,1,1];
+  if(S.wbMode==="auto"){
+    var p=6, s=[0,0,0], cnt=0;
+    for(i=0;i<n;i+=16){                       // 4픽셀 간격 표본
+      var lr=s2l(d[i]), lg=s2l(d[i+1]), lb=s2l(d[i+2]);
+      if(lr>0.995&&lg>0.995&&lb>0.995) continue;   // 날아간 화소 제외
+      s[0]+=Math.pow(lr,p); s[1]+=Math.pow(lg,p); s[2]+=Math.pow(lb,p); cnt++;
+    }
+    if(cnt>0){
+      var e=[Math.pow(s[0]/cnt,1/p),Math.pow(s[1]/cnt,1/p),Math.pow(s[2]/cnt,1/p)];
+      var mean=(e[0]+e[1]+e[2])/3;
+      g=[mean/(e[0]||1e-6), mean/(e[1]||1e-6), mean/(e[2]||1e-6)];
+    }
+  } else if(S.wbMode==="pick" && whitePx){
+    var lr2=s2l(whitePx[0]), lg2=s2l(whitePx[1]), lb2=s2l(whitePx[2]);
+    var m2=(lr2+lg2+lb2)/3;
+    g=[m2/(lr2||1e-6), m2/(lg2||1e-6), m2/(lb2||1e-6)];
+  } else if(S.wbMode==="pick"){
+    g=S.gain;
+  }
+  g=g.map(function(v){return clamp(v,0.55,1.85);});
+  S.gain=g;
+  var out=ctx.createImageData(S.w,S.h), o=out.data;
+  for(i=0;i<n;i+=4){
+    o[i]  =l2s(s2l(d[i])  *g[0]);
+    o[i+1]=l2s(s2l(d[i+1])*g[1]);
+    o[i+2]=l2s(s2l(d[i+2])*g[2]);
+    o[i+3]=255;
+  }
+  S.corr=out;
+  $("gr").textContent=g[0].toFixed(2);
+  $("gb").textContent=g[2].toFixed(2);
+  detectSkin();
+  redraw();
+  measure();
+}
+
+/* ══ 6. 피부 화소 선별 ═════════════════════════════════════════ */
+function isSkin(r,gg,b){
+  if(r<24 || r<b) return false;
+  var mx=Math.max(r,gg,b), mn=Math.min(r,gg,b);
+  if(mx>250 && mx-mn<12) return false;                 // 정반사
+  var Cb=128-0.168736*r-0.331264*gg+0.5*b;
+  var Cr=128+0.5*r-0.418688*gg-0.081312*b;
+  if(Cr<128||Cr>185||Cb<72||Cb>138) return false;
+  var v=mx/255, sat=mx===0?0:(mx-mn)/mx;
+  if(sat<0.08||sat>0.92||v<0.10) return false;
+  var hd=mx-mn, hh;
+  if(hd===0) return false;
+  if(mx===r) hh=60*(((gg-b)/hd)%6); else if(mx===gg) hh=60*((b-r)/hd+2); else hh=60*((r-gg)/hd+4);
+  if(hh<0) hh+=360;
+  return (hh<=62 || hh>=335);
+}
+function detectSkin(){
+  if(!S.corr) return;
+  var d=S.corr.data, N=S.w*S.h, mask=new Uint8Array(N), labs=[], i;
+  for(i=0;i<N;i++){
+    var k=i*4;
+    if(isSkin(d[k],d[k+1],d[k+2])){ mask[i]=1; if(i%3===0) labs.push(rgb2lab(d[k],d[k+1],d[k+2])); }
+  }
+  S.mask=mask; S.skinPx=0;
+  for(i=0;i<N;i++) S.skinPx+=mask[i];
+  $("px-count").textContent="피부 화소 "+S.skinPx.toLocaleString("ko-KR");
+  if(labs.length<40){ S.autoSkin=null; S.spread=0; return; }
+  labs.sort(function(a,b){return a[0]-b[0];});
+  var lo=Math.floor(labs.length*0.12), hi=Math.floor(labs.length*0.92);  // 그림자·하이라이트 절단
+  var core=labs.slice(lo,hi);
+  if(!core.length) core=labs;
+  S.autoSkin=medianLab(core);
+  S.spread=core[Math.floor(core.length*0.84)][0]-core[Math.floor(core.length*0.16)][0];
+}
+function medianLab(arr){
+  var out=[];
+  for(var c=0;c<3;c++){
+    var v=arr.map(function(x){return x[c];}).sort(function(a,b){return a-b;});
+    out.push(v[Math.floor(v.length/2)]);
+  }
+  return out;
+}
+
+/* ══ 7. 캔버스 렌더 ════════════════════════════════════════════ */
+function redraw(){
+  if(!S.corr) return;
+  ctx.putImageData(S.corr,0,0);
+  if(S.showMask && S.mask){
+    var im=ctx.getImageData(0,0,S.w,S.h), d=im.data;
+    for(var i=0;i<S.w*S.h;i++) if(!S.mask[i]){ var k=i*4;
+      var y=0.299*d[k]+0.587*d[k+1]+0.114*d[k+2];
+      d[k]=d[k+1]=d[k+2]=y*0.45+120*0.55;
+    }
+    ctx.putImageData(im,0,0);
+  }
+  var COL={skin:"#00E5FF",hair:"#FFD400",eye:"#FF4DD2"};
+  S.pts.forEach(function(p){
+    ctx.beginPath(); ctx.arc(p.x,p.y,9,0,6.284);
+    ctx.strokeStyle="rgba(0,0,0,.8)"; ctx.lineWidth=3.5; ctx.stroke();
+    ctx.strokeStyle=COL[p.kind]; ctx.lineWidth=1.8; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(p.x-13,p.y); ctx.lineTo(p.x-11,p.y);
+    ctx.moveTo(p.x+11,p.y); ctx.lineTo(p.x+13,p.y);
+    ctx.moveTo(p.x,p.y-13); ctx.lineTo(p.x,p.y-11);
+    ctx.moveTo(p.x,p.y+11); ctx.lineTo(p.x,p.y+13);
+    ctx.strokeStyle=COL[p.kind]; ctx.lineWidth=1.8; ctx.stroke();
+  });
+}
+function sampleAt(x,y,rad){
+  var d=S.corr.data, acc=[];
+  for(var dy=-rad;dy<=rad;dy++) for(var dx=-rad;dx<=rad;dx++){
+    if(dx*dx+dy*dy>rad*rad) continue;
+    var px=x+dx, py=y+dy;
+    if(px<0||py<0||px>=S.w||py>=S.h) continue;
+    var k=(py*S.w+px)*4;
+    acc.push(rgb2lab(d[k],d[k+1],d[k+2]));
+  }
+  return acc.length? medianLab(acc) : null;
+}
+
+/* ══ 8. 측정 ═══════════════════════════════════════════════════ */
+function group(kind){ return S.pts.filter(function(p){return p.kind===kind;}); }
+function skinLab(){
+  var g=group("skin");
+  if(g.length) return medianLab(g.map(function(p){return p.lab;}));
+  return S.autoSkin;
+}
+function measure(){
+  var sk=skinLab();
+  var hairs=group("hair"), eyes=group("eye");
+  var hair=hairs.length? medianLab(hairs.map(function(p){return p.lab;})) : null;
+  var eye =eyes.length ? medianLab(eyes.map(function(p){return p.lab;}))  : null;
+  renderPts();
+  if(!sk){
+    ["v-L","v-ita","v-hue","v-c","v-a","v-b","v-ct"].forEach(function(id){$(id).textContent="—";});
+    $("sk-hex").textContent="—"; $("sk-chip").style.background="var(--sunken)";
+    $("btn-run").disabled=true; return;
+  }
+  var m=metrics(sk), hx=labHex(sk[0],sk[1],sk[2]);
+  $("sk-chip").style.background=hx;
+  $("sk-hex").textContent=hx.toUpperCase()+"  ·  L*"+m.L.toFixed(1)+" a*"+m.a.toFixed(1)+" b*"+m.b.toFixed(1);
+  $("v-L").textContent=m.L.toFixed(1);
+  $("v-ita").textContent=m.ita.toFixed(1)+"°";
+  $("v-hue").textContent=m.h.toFixed(1)+"°";
+  $("v-c").textContent=m.C.toFixed(1);
+  $("v-a").textContent=m.a.toFixed(1);
+  $("v-b").textContent=m.b.toFixed(1);
+  if(hair){ $("v-ct").textContent=(m.L-hair[0]).toFixed(1); $("v-ct-src").textContent="측정값"; }
+  else { $("v-ct").textContent="추정"; $("v-ct-src").textContent="머리카락 미채취"; }
+  S.cur={sk:sk,hair:hair,eye:eye,m:m};
+  $("btn-run").disabled=false;
+}
+function renderPts(){
+  var box=$("pts"), KO={skin:"피부",hair:"머리",eye:"눈동자"};
+  if(!S.pts.length){ box.innerHTML='<div class="empty-line">채취한 점 없음 — 자동 검출값 사용 중</div>'; return; }
+  box.innerHTML="";
+  S.pts.forEach(function(p,i){
+    var lab=p.lab, hx=labHex(lab[0],lab[1],lab[2]);
+    var row=document.createElement("div"); row.className="pt";
+    row.innerHTML='<i style="background:'+hx+'"></i><span class="k">'+KO[p.kind]+'</span>'+
+      '<span class="m">L*'+lab[0].toFixed(1)+'  '+hx.toUpperCase()+'</span>';
+    var b=document.createElement("button"); b.type="button"; b.textContent="×";
+    b.setAttribute("aria-label",KO[p.kind]+" 점 삭제");
+    b.onclick=function(){ S.pts.splice(i,1); redraw(); measure(); };
+    row.appendChild(b); box.appendChild(row);
+  });
+}
+
+/* ══ 9. 판정 ═══════════════════════════════════════════════════ */
+function classify(c){
+  var m=c.m;
+  /* 축 1 — 웜쿨: 색상각 54°가 중립. 눈동자가 있으면 보조 근거로 섞음 */
+  var W=clamp((m.h-54)/10,-1.6,1.6);
+  if(c.eye){ var em=metrics(c.eye); W=W*0.82 + clamp((em.h-52)/12,-1.6,1.6)*0.18; }
+  var wn=clamp(0.5+W/2.4,0,1);
+  /* 축 2 — 명도: ITA°를 주로, L*를 보조로 */
+  var ln=clamp(norm(m.ita,-50,60)*0.65 + norm(m.L,30,82)*0.35,0,1);
+  /* 축 3 — 선명도: 피부–머리카락 명도차 + 눈동자 채도 (없으면 피부 채도로 추정) */
+  var contrast=null, cn;
+  if(c.hair){
+    contrast=m.L-c.hair[0];
+    cn=norm(contrast,18,58)*0.72 + (c.eye? norm(metrics(c.eye).C,6,26)*0.28 : norm(m.C,12,26)*0.28);
+  } else {
+    cn=norm(m.C,14,34)*0.50 + 0.25;   // 추정치는 0.25–0.75 — 극단 타입은 실측 없이 판정하지 않음
+  }
+  cn=clamp(cn,0,1);
+  var sc={
+    spring:0.45*wn      + 0.30*ln     + 0.25*cn,
+    autumn:0.45*wn      + 0.30*(1-ln) + 0.25*(1-cn),
+    summer:0.45*(1-wn)  + 0.30*ln     + 0.25*(1-cn),
+    winter:0.45*(1-wn)  + 0.30*(1-ln) + 0.25*cn
+  };
+  var order=Object.keys(sc).sort(function(a,b){return sc[b]-sc[a];});
+  var season=order[0], margin=sc[order[0]]-sc[order[1]];
+  var key;
+  /* 세부 타입은 '그 계절 안에서의' 위치로 가른다.
+     계절을 고른 변수와 같은 절대 눈금을 다시 쓰면 한쪽 타입이 아예 나오지 않는다. */
+  if(season==="spring")      key = cn>0.74 ? "spring-vivid"
+                                 : (cn<0.53 ? "spring-light" : "spring-bright");
+  else if(season==="summer") key = cn>0.54 ? "summer-bright"
+                                 : ((cn<0.27 || ln<0.76) ? "summer-mute" : "summer-light");
+  else if(season==="autumn") key = ln<0.15 ? "autumn-deep"
+                                 : (cn<0.24 ? "autumn-mute" : "autumn-strong");
+  else                       key = ln<0.10 ? "winter-deep"
+                                 : (cn>0.43 ? "winter-vivid" : "winter-bright");
+
+  /* 신뢰도 */
+  var reasons=[], conf=52;
+  if(margin>0.09){ conf+=18; reasons.push(["ok","1·2위 계절 점수 차 "+(margin*100).toFixed(0)+"점 — 경계에서 충분히 떨어져 있습니다."]); }
+  else { conf+=5; reasons.push(["warn",SEASON_KO[order[0]]+"과 "+SEASON_KO[order[1]]+"의 점수 차가 "+(margin*100).toFixed(0)+"점뿐입니다. 경계형입니다."]); }
+  if(c.hair && contrast<-6){ conf-=14;
+    reasons.push(["warn","머리카락이 피부보다 L* "+Math.abs(contrast).toFixed(0)+"만큼 밝게 측정됐습니다. 배경이나 조명 반사를 찍었을 가능성이 큽니다 — 점을 지우고 다시 찍으세요."]); }
+  else if(c.hair){ conf+=14; reasons.push(["ok","머리카락을 채취해 명도 대비를 실측했습니다."]); }
+  else reasons.push(["warn","머리카락 미채취 — 세부 타입을 피부 채도로 추정했습니다."]);
+  if(c.eye){ conf+=7; reasons.push(["ok","눈동자 채취로 웜쿨·선명도를 교차 검증했습니다."]); }
+  else reasons.push(["warn","눈동자 미채취 — 웜쿨 판정이 피부 하나에만 의존합니다."]);
+  if(group("skin").length>=3){ conf+=9; reasons.push(["ok","피부를 "+group("skin").length+"곳에서 직접 채취했습니다."]); }
+  else if(S.skinPx>3000) reasons.push(["warn","자동 검출값 사용 중 — 이마·볼·턱을 직접 찍으면 정확해집니다."]);
+  else { conf-=10; reasons.push(["warn","피부 화소가 적습니다. 얼굴이 더 크게 나온 사진을 쓰세요."]); }
+  var gmax=Math.max(Math.abs(S.gain[0]-1),Math.abs(S.gain[2]-1));
+  if(S.wbMode==="off"){ conf-=8; reasons.push(["warn","화이트밸런스 보정 없음 — 광원 색이 그대로 섞여 있습니다."]); }
+  else if(gmax>0.32){ conf-=9; reasons.push(["warn","광원 보정량이 큽니다(이득 "+(1+gmax).toFixed(2)+"). 색이 강하게 치우친 조명입니다."]); }
+  else reasons.push(["ok","광원 보정량이 작습니다 — 중성광에 가까운 사진입니다."]);
+  if(S.spread>26){ conf-=7; reasons.push(["warn","피부 밝기 편차가 큽니다(L* "+S.spread.toFixed(0)+"). 그림자가 섞였을 수 있습니다."]); }
+
+  return {key:key,season:season,scores:sc,order:order,margin:margin,
+    wn:wn,ln:ln,cn:cn,W:W,contrast:contrast,m:m,
+    conf:clamp(Math.round(conf),18,97),reasons:reasons};
+}
+
+/* ══ 10. 팔레트 생성 ═══════════════════════════════════════════ */
+function buildPalette(sig,hues,count){
+  var out=[], seen={};
+  for(var i=0;i<Math.min(count,hues.length);i++){
+    var h=(hues[i]+sig.bias+360)%360;
+    var jitter=(i%3-1)*3;                       // 같은 시그니처 안에서 단조로움 방지
+    var L=clamp(sig.L+jitter,14,94), C=sig.C;
+    var hx=lchHex(L,C,h), lab=labOf(hx), mm=metrics(lab);
+    var nm=colorName(mm.L,mm.C,mm.h);
+    if(seen[nm]!==undefined){                   // 한 팔레트 안 이름 중복 방지
+      nm=(mm.L<seen[nm]?"다크 ":"라이트 ")+nm.replace(/^(라이트|딥|더스티|비비드|다크)\s/,"");
+      if(seen[nm]!==undefined) nm=nm+" 2";
+    }
+    seen[nm]=mm.L;
+    out.push({hex:hx,name:nm,L:mm.L,C:mm.C,h:mm.h});
+  }
+  return out;
+}
+function swatchHTML(list,cls){
+  return list.map(function(s){
+    return '<button class="sw '+(cls||"")+'" type="button" data-hex="'+s.hex+'" aria-label="'+s.name+' '+s.hex+' 복사">'+
+      '<i style="background:'+s.hex+'"></i><span><span class="nm">'+s.name+'</span>'+
+      '<span class="hx">'+s.hex.toUpperCase()+'</span></span></button>';
+  }).join("");
+}
+function foundation(m){
+  var ita=m.ita, shade, name;
+  if(ita>=48){shade="17호";name="포슬린";} else if(ita>=40){shade="19호";name="라이트";}
+  else if(ita>=31){shade="21호";name="내추럴/바닐라";} else if(ita>=22){shade="23호";name="샌드/미디엄";}
+  else if(ita>=8){shade="25호";name="탠";} else if(ita>=-15){shade="27호";name="캐러멜";}
+  else {shade="29호 이상";name="딥";}
+  var un = m.h>=58? "W(웜/옐로)" : m.h<=50? "C(쿨/핑크)" : "N(뉴트럴)";
+  return {shade:shade,name:name,under:un};
+}
+
+/* ══ 11. 차트 ══════════════════════════════════════════════════ */
+var SEASON_VAR={spring:"var(--spring)",summer:"var(--summer)",autumn:"var(--autumn)",winter:"var(--winter)"};
+function svg(el,inner){ $(el).innerHTML=$(el).innerHTML.split("</title>")[0]+"</title>"+inner; }
+
+function drawMap(r){
+  var x0=36,x1=306,y0=16,y1=168, mx=(x0+x1)/2, my=(y0+y1)/2;
+  var Z=[["summer",x0,y0,"여름 쿨"],["spring",mx,y0,"봄 웜"],["winter",x0,my,"겨울 쿨"],["autumn",mx,my,"가을 웜"]];
+  var s="";
+  Z.forEach(function(z){
+    var on=z[0]===r.season;
+    s+='<rect x="'+z[1]+'" y="'+z[2]+'" width="'+((x1-x0)/2-1)+'" height="'+((y1-y0)/2-1)+'" '+
+       'fill="'+SEASON_VAR[z[0]]+'" opacity="'+(on?0.20:0.07)+'"/>'+
+       '<rect x="'+z[1]+'" y="'+z[2]+'" width="'+((x1-x0)/2-1)+'" height="'+((y1-y0)/2-1)+'" '+
+       'fill="none" stroke="'+SEASON_VAR[z[0]]+'" stroke-width="'+(on?2:1)+'" opacity="'+(on?1:.42)+'"/>'+
+       '<text class="zone-lab" x="'+(z[1]+8)+'" y="'+(z[2]+17)+'" fill="'+SEASON_VAR[z[0]]+'" '+
+       'font-weight="'+(on?600:500)+'" opacity="'+(on?1:.72)+'">'+z[3]+'</text>';
+  });
+  var px=x0+r.wn*(x1-x0), py=y1-r.ln*(y1-y0);
+  s+='<line x1="'+x0+'" y1="'+py+'" x2="'+x1+'" y2="'+py+'" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="2 3" opacity=".5"/>';
+  s+='<line x1="'+px+'" y1="'+y0+'" x2="'+px+'" y2="'+y1+'" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="2 3" opacity=".5"/>';
+  s+='<circle cx="'+px+'" cy="'+py+'" r="7" fill="'+SEASON_VAR[r.season]+'" class="mark-ring"/>';
+  s+='<text class="axis-lab" x="'+x0+'" y="'+(y1+15)+'">COOL</text>';
+  s+='<text class="axis-lab" x="'+x1+'" y="'+(y1+15)+'" text-anchor="end">WARM</text>';
+  s+='<text class="axis-lab" x="'+(x0-6)+'" y="'+(y0+5)+'" text-anchor="end">밝음</text>';
+  s+='<text class="axis-lab" x="'+(x0-6)+'" y="'+(y1)+'" text-anchor="end">짙음</text>';
+  s+='<text class="axis-lab" x="'+mx+'" y="'+(y1+15)+'" text-anchor="middle">웜쿨 지수 / 명도</text>';
+  svg("ch-map",s);
+  $("rv-map").textContent=SEASON_KO[r.season];
+  $("rv-map").style.color=SEASON_VAR[r.season];
+}
+function drawITA(r){
+  var x0=10,x1=310,y=34,hgt=22;
+  var bands=[["딥브라운",-60,-30],["브라운",-30,10],["태닝",10,28],["중간",28,41],["밝음",41,55],["매우 밝음",55,80]];
+  var s="", span=140;
+  function X(v){return x0+((v+60)/span)*(x1-x0);}
+  bands.forEach(function(b){
+    var mid=(b[1]+b[2])/2;
+    var Lv=clamp(50+mid*0.42,22,92), col=lchHex(Lv,clamp(30-Math.abs(mid)*0.06,12,30),58);
+    s+='<rect x="'+X(b[1])+'" y="'+y+'" width="'+(X(b[2])-X(b[1])-2)+'" height="'+hgt+'" fill="'+col+'" rx="1"/>';
+    s+='<text class="axis-lab" x="'+((X(b[1])+X(b[2]))/2)+'" y="'+(y+hgt+13)+'" text-anchor="middle">'+b[0]+'</text>';
+  });
+  var px=clamp(X(r.m.ita),x0,x1);
+  s+='<path d="M'+px+' '+(y-3)+' l-5 -8 h10 z" fill="var(--ink)"/>';
+  s+='<line x1="'+px+'" y1="'+(y-2)+'" x2="'+px+'" y2="'+(y+hgt+2)+'" stroke="var(--ink)" stroke-width="2.5"/>';
+  s+='<line x1="'+px+'" y1="'+(y-2)+'" x2="'+px+'" y2="'+(y+hgt+2)+'" stroke="var(--surface)" stroke-width="1"/>';
+  s+='<text class="axis-lab" x="'+x0+'" y="'+(y-10)+'">−60°</text>';
+  s+='<text class="axis-lab" x="'+x1+'" y="'+(y-10)+'" text-anchor="end">+80°</text>';
+  svg("ch-ita",s);
+  var lab=bands.filter(function(b){return r.m.ita>=b[1]&&r.m.ita<b[2];})[0];
+  $("rv-ita").textContent=r.m.ita.toFixed(1)+"° · "+(lab?lab[0]:"범위 밖");
+}
+function diverging(id,rvId,val,leftLab,rightLab,leftCol,rightCol,caption){
+  var x0=10,x1=310,y=30,hgt=20,mid=(x0+x1)/2;
+  var s='<defs><linearGradient id="g'+id+'" x1="0" x2="1">'+
+    '<stop offset="0" stop-color="'+leftCol+'"/><stop offset="0.5" stop-color="var(--rule-2)"/>'+
+    '<stop offset="1" stop-color="'+rightCol+'"/></linearGradient></defs>';
+  s+='<rect x="'+x0+'" y="'+y+'" width="'+(x1-x0)+'" height="'+hgt+'" fill="url(#g'+id+')" rx="1"/>';
+  s+='<line x1="'+mid+'" y1="'+(y-5)+'" x2="'+mid+'" y2="'+(y+hgt+5)+'" stroke="var(--ink-3)" stroke-width="1"/>';
+  s+='<text class="axis-lab" x="'+mid+'" y="'+(y+hgt+18)+'" text-anchor="middle">중립</text>';
+  var px=x0+clamp(val,0,1)*(x1-x0);
+  s+='<path d="M'+px+' '+(y-4)+' l-5 -8 h10 z" fill="var(--ink)"/>';
+  s+='<line x1="'+px+'" y1="'+(y-3)+'" x2="'+px+'" y2="'+(y+hgt+3)+'" stroke="var(--ink)" stroke-width="2.5"/>';
+  s+='<line x1="'+px+'" y1="'+(y-3)+'" x2="'+px+'" y2="'+(y+hgt+3)+'" stroke="var(--surface)" stroke-width="1"/>';
+  s+='<text class="axis-lab" x="'+x0+'" y="'+(y-9)+'">'+leftLab+'</text>';
+  s+='<text class="axis-lab" x="'+x1+'" y="'+(y-9)+'" text-anchor="end">'+rightLab+'</text>';
+  svg(id,s);
+  $(rvId).textContent=caption;
+}
+
+/* ══ 12. 결과 렌더 ═════════════════════════════════════════════ */
+function render(r){
+  var T=TYPES[r.key];
+  $("result").hidden=false;
+  $("r-name").textContent=T.ko;
+  $("r-en").textContent=T.en+"  ·  "+SEASON_KO[T.season];
+  $("r-desc").textContent=T.desc;
+  $("c-val").textContent=r.conf;
+  $("c-bar").style.width=r.conf+"%";
+  $("c-list").innerHTML=r.reasons.map(function(x){
+    return '<li class="'+x[0]+'"><b>'+(x[0]==="ok"?"✓":"!")+'</b><span>'+x[1]+'</span></li>';}).join("");
+
+  drawMap(r); drawITA(r);
+  diverging("ch-wc","rv-wc",r.wn,"COOL 쿨","WARM 웜","var(--summer)","var(--spring)",
+    (r.W>0.12?"웜 +":r.W<-0.12?"쿨 ":"뉴트럴 ")+r.W.toFixed(2)+"  ·  h "+r.m.h.toFixed(1)+"°");
+  diverging("ch-cl","rv-cl",r.cn,"MUTE 뮤트","BRIGHT 브라이트","var(--ink-3)","var(--winter)",
+    (r.contrast!=null? "대비 L* "+r.contrast.toFixed(1)+"  ·  " : "추정  ·  ")+"지수 "+r.cn.toFixed(2));
+
+  var rows=[
+    ["L* 명도",r.m.L.toFixed(1),"0–100","높을수록 밝은 피부"],
+    ["a* 적색축",r.m.a.toFixed(1),"−128–127","혈색·홍조의 세기"],
+    ["b* 황색축",r.m.b.toFixed(1),"−128–127","멜라닌·카로틴의 노란기"],
+    ["C* 채도",r.m.C.toFixed(1),"0–",r.m.C>20?"선명한 편":"차분한 편"],
+    ["h° 색상각",r.m.h.toFixed(1)+"°","0–360°",r.m.h>58?"노란기 우세 → 웜":r.m.h<50?"붉은기 우세 → 쿨":"경계"],
+    ["ITA° 피부심도",r.m.ita.toFixed(1)+"°","−90–90°","클수록 밝은 피부"],
+    ["명도 대비",r.contrast!=null?r.contrast.toFixed(1):"미측정","L* 차","피부와 머리카락의 밝기 차"],
+    ["봄 점수",(r.scores.spring*100).toFixed(1),"0–100",r.season==="spring"?"◀ 1위":""],
+    ["여름 점수",(r.scores.summer*100).toFixed(1),"0–100",r.season==="summer"?"◀ 1위":""],
+    ["가을 점수",(r.scores.autumn*100).toFixed(1),"0–100",r.season==="autumn"?"◀ 1위":""],
+    ["겨울 점수",(r.scores.winter*100).toFixed(1),"0–100",r.season==="winter"?"◀ 1위":""]
+  ];
+  $("tbl-body").innerHTML=rows.map(function(x){
+    return "<tr><td>"+x[0]+'</td><td class="num">'+x[1]+'</td><td class="num">'+x[2]+"</td><td>"+x[3]+"</td></tr>";}).join("");
+
+  var hues=HUES[T.season];
+  var best=buildPalette(T.sig,hues,12);
+  var worst=buildPalette(T.bad,[hues[3],hues[6],hues[9],hues[1],hues[7]],5);
+  var warmSeason=(T.season==="spring"||T.season==="autumn");
+  /* 립은 명도를 벌려 데일리·포인트·딥 세 자리로 만든다 — 같은 계열 3색은 쓸모가 없다 */
+  var lipSpec=warmSeason? [[20,-4],[40,-13],[2,-22]] : [[352,-4],[326,-13],[10,-22]];
+  var lip=lipSpec.map(function(sp,i){
+    var Ll=clamp(T.sig.L+sp[1],24,74), Cl=clamp(T.sig.C+10,30,96);
+    var hx=lchHex(Ll,Cl,sp[0]), mm=metrics(labOf(hx));
+    return {hex:hx, name:["데일리","포인트","딥"][i]+" · "+colorName(mm.L,mm.C,mm.h)};
+  });
+  var hairSig={L:clamp(28+r.ln*16,22,48),C:T.season==="spring"||T.season==="autumn"?30:14,bias:0};
+  var hair=buildPalette(hairSig,[T.season==="spring"||T.season==="autumn"?58:34, T.season==="autumn"?42:24, T.season==="winter"?16:70],3);
+  $("pal-best").innerHTML=swatchHTML(best);
+  $("pal-worst").innerHTML=swatchHTML(worst,"avoid");
+  $("pal-lip").innerHTML=swatchHTML(lip);
+  $("pal-hair").innerHTML=swatchHTML(hair);
+
+  var f=foundation(r.m);
+  var baseHex=labHex(clamp(r.m.L+1.5,10,96),r.m.a,r.m.b);
+  var conceal=labHex(clamp(r.m.L+8,10,97),r.m.a*0.8,r.m.b*0.9);
+  $("pal-base").innerHTML=swatchHTML([
+    {hex:baseHex,name:"파운데이션 "+f.shade},
+    {hex:conceal,name:"컨실러 (+8 L*)"},
+    {hex:labHex(clamp(r.m.L-5,8,90),r.m.a*1.05,r.m.b*1.1),name:"셰이딩 (−5 L*)"}]);
+  $("base-note").innerHTML="측정 피부색 기준 <b>"+f.shade+" "+f.name+" "+f.under+"</b>. 파운데이션은 바른 뒤 산화로 반호 정도 어두워지므로 위 색보다 반 톤 밝은 제품이 실제로 맞습니다.";
+  var warm=warmSeason;
+  $("pal-metal").innerHTML=swatchHTML(warm
+    ?[{hex:"#C9A227",name:"옐로 골드"},{hex:"#B08D57",name:"앤티크 골드"},{hex:"#B87333",name:"코퍼"}]
+    :[{hex:"#B9BDC4",name:"실버"},{hex:"#CFD4DA",name:"플래티넘"},{hex:"#8E9AA6",name:"건메탈"}]);
+  $("metal-note").textContent=warm
+    ?"금색 계열이 피부의 노란기와 같은 방향으로 붙어 얼굴이 화사해집니다. 은색은 피부를 창백하게 눌러앉힙니다."
+    :"은색 계열이 피부의 푸른기와 맞물려 투명해 보입니다. 금색은 노란기를 끌어올려 얼굴을 칙칙하게 만듭니다.";
+
+  S.best=best; S.worst=worst; S.drapeIdx=0;
+  $("drape-strip").innerHTML=best.concat(worst).map(function(s,i){
+    return '<button type="button" data-i="'+i+'" aria-pressed="'+(i===0)+'" style="background:'+s.hex+'" title="'+s.name+'" aria-label="'+s.name+' 드레이프"></button>';}).join("");
+  S.drapeList=best.concat(worst);
+  drawDrape();
+  $("result").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ══ 13. 드레이핑 ══════════════════════════════════════════════ */
+function drawDrape(){
+  var c=$("drape-cv"), g=c.getContext("2d");
+  var W=c.width, H=c.height;
+  var best=(S.best&&S.best[0])?S.best[Math.min(S.drapeIdx,S.best.length-1)].hex:"#cccccc";
+  var pick=(S.drapeList&&S.drapeList[S.drapeIdx])?S.drapeList[S.drapeIdx].hex:best;
+  var worst=(S.worst&&S.worst[0])?S.worst[0].hex:"#8a8a8a";
+  g.clearRect(0,0,W,H);
+  function field(x,w,col){ g.fillStyle=col; g.fillRect(x,0,w,H); }
+  if(S.drape==="split"){ field(0,W/2,pick); field(W/2,W/2,worst); }
+  else field(0,W,S.drape==="worst"?worst:pick);
+  var ph=H*0.66, pw, sx=0, sy=0, sw, sh;
+  if(S.img){
+    var ar=S.w/S.h; pw=ph*ar;
+    if(pw>W*0.7){ pw=W*0.7; ph=pw/ar; }
+    g.save();
+    g.drawImage(cvBase(), (W-pw)/2, H*0.06, pw, ph);
+    var grd=g.createLinearGradient(0,H*0.06+ph*0.74,0,H*0.06+ph);
+    grd.addColorStop(0,"rgba(0,0,0,0)");
+    grd.addColorStop(1,S.drape==="split"?"rgba(0,0,0,0)":pick);
+    if(S.drape!=="split"){ g.fillStyle=grd; g.fillRect((W-pw)/2,H*0.06+ph*0.74,pw,ph*0.26); }
+    g.restore();
+  } else {
+    g.fillStyle="#B9B9BE"; g.fillRect(W*0.28,H*0.10,W*0.44,H*0.56);
+    g.fillStyle="#77777E"; g.font='500 15px "IBM Plex Sans KR",sans-serif'; g.textAlign="center";
+    g.fillText("사진을 불러오면 여기에 표시됩니다",W/2,H*0.40);
+  }
+  g.fillStyle="rgba(0,0,0,.55)"; g.fillRect(0,H-30,W,30);
+  g.fillStyle="#fff"; g.font='500 13px "IBM Plex Mono",monospace'; g.textAlign="left";
+  g.fillText(S.drape==="split"? "좌: "+pick.toUpperCase()+"  ·  우: "+worst.toUpperCase()
+    : (S.drape==="worst"?"워스트 ":"베스트 ")+(S.drape==="worst"?worst:pick).toUpperCase(), 14, H-10);
+}
+var _baseCanvas=null;
+function cvBase(){
+  if(!_baseCanvas){ _baseCanvas=document.createElement("canvas"); }
+  _baseCanvas.width=S.w; _baseCanvas.height=S.h;
+  var g=_baseCanvas.getContext("2d");
+  if(S.corr) g.putImageData(S.corr,0,0);
+  return _baseCanvas;
+}
+
+/* ══ 14. 강조색을 판정된 시즌 색으로 교체 (대비는 계산해서 결정) ══ */
+function applySeasonAccent(season){
+  var root=document.documentElement;
+  root.style.setProperty("--season",SEASON_VAR[season]);
+  root.style.setProperty("--accent",SEASON_VAR[season]);
+  var hx=getComputedStyle(root).getPropertyValue("--accent").trim();
+  if(/^#[0-9a-f]{6}$/i.test(hx)){
+    var c=hex2rgb(hx), Y=0.2126*s2l(c[0])+0.7152*s2l(c[1])+0.0722*s2l(c[2]);
+    /* 검정/흰색 대비가 같아지는 지점: √(0.05×1.05) − 0.05 ≈ 0.179 */
+    root.style.setProperty("--accent-ink", Y>0.179? "#141416" : "#FFFFFF");
+    var sf=getComputedStyle(root).getPropertyValue("--surface").trim();
+    if(/^#[0-9a-f]{6}$/i.test(sf)){
+      var b=hex2rgb(sf), t=0.17;
+      root.style.setProperty("--accent-soft",
+        "#"+hex2(c[0]*t+b[0]*(1-t))+hex2(c[1]*t+b[1]*(1-t))+hex2(c[2]*t+b[2]*(1-t)));
+    }
+  }
+}
+if(window.matchMedia){
+  var mq=window.matchMedia("(prefers-color-scheme: dark)");
+  var onTheme=function(){ if(S.res) applySeasonAccent(TYPES[S.res.key].season); };
+  if(mq.addEventListener) mq.addEventListener("change",onTheme); else if(mq.addListener) mq.addListener(onTheme);
+}
+
+/* ══ 15. 예시 표본 (합성) ══════════════════════════════════════ */
+function demoImage(){
+  var w=520,h=640,c=document.createElement("canvas"); c.width=w; c.height=h;
+  var g=c.getContext("2d");
+  var presets=[[68,12,19],[74,9,15],[58,15,23],[45,16,22],[33,13,17],[80,7,13]];
+  var p=presets[Math.floor(Math.random()*presets.length)];
+  var skin=labHex(p[0],p[1],p[2]), skinD=labHex(p[0]-13,p[1]+1.5,p[2]+1.5);
+  var hairL=Math.random()<0.6? 18 : 34;
+  var hair=labHex(hairL,p[1]*0.35+2,p[2]*0.45+2);
+  g.fillStyle=labHex(88,0,1); g.fillRect(0,0,w,h);
+  g.fillStyle=hair; g.beginPath(); g.ellipse(260,290,182,236,0,0,6.284); g.fill();
+  g.fillStyle=labHex(p[0]-9,p[1],p[2]); g.beginPath(); g.ellipse(260,540,124,150,0,0,6.284); g.fill();
+  var gr=g.createRadialGradient(260,286,40,260,300,215);
+  gr.addColorStop(0,skin); gr.addColorStop(0.72,skin); gr.addColorStop(1,skinD);
+  g.fillStyle=gr; g.beginPath(); g.ellipse(260,300,146,192,0,0,6.284); g.fill();
+  var eye=labHex(hairL+9,p[1]*0.5+3,p[2]*0.5+4);
+  [[203,272],[317,272]].forEach(function(e){
+    g.fillStyle=labHex(93,0,2); g.beginPath(); g.ellipse(e[0],e[1],30,15,0,0,6.284); g.fill();
+    g.fillStyle=eye; g.beginPath(); g.arc(e[0],e[1],13,0,6.284); g.fill();
+    g.fillStyle=labHex(12,1,1); g.beginPath(); g.arc(e[0],e[1],5.5,0,6.284); g.fill();
+  });
+  g.fillStyle=labHex(p[0]-16,p[1]+11,p[2]+1); g.beginPath(); g.ellipse(260,398,36,15,0,0,6.284); g.fill();
+  g.fillStyle="rgba(255,255,255,.16)"; g.beginPath(); g.ellipse(214,228,44,26,-0.4,0,6.284); g.fill();
+  return c.toDataURL("image/png");
+}
+
+/* ══ 16. 이벤트 ════════════════════════════════════════════════ */
+$("btn-file").onclick=function(){ $("file").click(); };
+$("file").onchange=function(e){
+  var f=e.target.files&&e.target.files[0]; if(!f) return;
+  var rd=new FileReader(); rd.onload=function(){ stopCam(); loadImage(rd.result); }; rd.readAsDataURL(f);
+};
+$("btn-demo").onclick=function(){ stopCam(); loadImage(demoImage()); toast("합성 표본을 불러왔습니다. 실제 진단은 본인 사진으로 하세요."); };
+
+var stage=$("stage");
+["dragenter","dragover"].forEach(function(ev){ stage.addEventListener(ev,function(e){e.preventDefault(); stage.classList.add("dragover");}); });
+["dragleave","drop"].forEach(function(ev){ stage.addEventListener(ev,function(e){e.preventDefault(); stage.classList.remove("dragover");}); });
+stage.addEventListener("drop",function(e){
+  var f=e.dataTransfer.files&&e.dataTransfer.files[0];
+  if(!f||!/^image\//.test(f.type)){ toast("이미지 파일만 받습니다."); return; }
+  var rd=new FileReader(); rd.onload=function(){ stopCam(); loadImage(rd.result); }; rd.readAsDataURL(f);
+});
+
+var video=null;
+function stopCam(){
+  if(S.stream){ S.stream.getTracks().forEach(function(t){t.stop();}); S.stream=null; }
+  $("btn-shot").hidden=true; $("btn-cam").textContent="카메라 켜기";
+}
+$("btn-cam").onclick=function(){
+  if(S.stream){ stopCam(); return; }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    toast("이 환경에서는 카메라를 쓸 수 없습니다. 사진을 불러오세요."); return;
+  }
+  navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},facingMode:"user"},audio:false})
+    .then(function(st){
+      S.stream=st;
+      video=document.createElement("video"); video.playsInline=true; video.muted=true; video.srcObject=st;
+      video.onloadedmetadata=function(){
+        video.play();
+        $("btn-shot").hidden=false; $("btn-cam").textContent="카메라 끄기";
+        $("hint").style.display="none"; stage.classList.remove("empty");
+        var MAX=760, sc=Math.min(1,MAX/Math.max(video.videoWidth,video.videoHeight));
+        cv.width=Math.round(video.videoWidth*sc); cv.height=Math.round(video.videoHeight*sc);
+        (function loop(){
+          if(!S.stream) return;
+          ctx.drawImage(video,0,0,cv.width,cv.height);
+          requestAnimationFrame(loop);
+        })();
+        toast("촬영 버튼을 누르면 그 프레임으로 측정합니다.");
+      };
+    })
+    .catch(function(err){
+      var n=err&&err.name;
+      if(n==="NotAllowedError"||n==="SecurityError")
+        toast("카메라가 차단됐습니다. 페이지를 새 탭에서 열거나 사진을 불러오세요.");
+      else if(n==="NotFoundError"||n==="OverconstrainedError")
+        toast("연결된 카메라를 찾지 못했습니다. 사진을 불러오세요.");
+      else toast("카메라를 열 수 없습니다. 사진을 불러오세요.");
+    });
+};
+$("btn-shot").onclick=function(){
+  if(!video) return;
+  var snap=document.createElement("canvas");
+  snap.width=cv.width; snap.height=cv.height;
+  snap.getContext("2d").drawImage(video,0,0,snap.width,snap.height);
+  var im=new Image(); im.onload=function(){ stopCam(); setImage(im); }; im.src=snap.toDataURL("image/png");
+};
+
+function segSet(ids,active){ ids.forEach(function(id){ $(id).setAttribute("aria-pressed", String(id===active)); }); }
+var WB_IDS=["wb-auto","wb-pick","wb-off"];
+$("wb-auto").onclick=function(){ S.wbMode="auto"; S.pickWhite=false; segSet(WB_IDS,"wb-auto");
+  $("wb-note").innerHTML='Shades-of-Gray(민코프스키 <code>p=6</code>) 방식으로 광원 색을 추정해 상쇄합니다. 화면에 흰 종이가 있다면 <b>흰색 지정</b>이 더 정확합니다.'; applyWB(); };
+$("wb-pick").onclick=function(){ S.wbMode="pick"; S.pickWhite=true; segSet(WB_IDS,"wb-pick");
+  $("wb-note").innerHTML='<b>흰색이어야 할 지점을 캔버스에서 클릭하세요.</b> 흰 종이·흰 셔츠·눈 흰자 순으로 정확합니다.'; };
+$("wb-off").onclick=function(){ S.wbMode="off"; S.pickWhite=false; segSet(WB_IDS,"wb-off");
+  $("wb-note").textContent="보정 없이 원본 화소를 그대로 씁니다. 조명이 이미 중성일 때만 쓰세요."; applyWB(); };
+
+var M_IDS=["m-skin","m-hair","m-eye"];
+M_IDS.forEach(function(id){ $(id).onclick=function(){ S.mode=id.split("-")[1]; segSet(M_IDS,id); }; });
+
+$("btn-mask").onclick=function(){ S.showMask=!S.showMask; this.classList.toggle("on",S.showMask);
+  this.textContent=S.showMask?"피부 마스크 보기":"피부 마스크 숨김"; redraw(); };
+$("btn-undo").onclick=function(){ S.pts.pop(); redraw(); measure(); };
+$("btn-clear").onclick=function(){ S.pts=[]; redraw(); measure(); };
+
+function canvasXY(e){
+  var r=cv.getBoundingClientRect();
+  var cx=(e.touches?e.touches[0].clientX:e.clientX), cy=(e.touches?e.touches[0].clientY:e.clientY);
+  return [Math.round((cx-r.left)*cv.width/r.width), Math.round((cy-r.top)*cv.height/r.height)];
+}
+cv.addEventListener("click",function(e){
+  if(!S.corr) return;
+  var p=canvasXY(e), x=p[0], y=p[1];
+  if(x<0||y<0||x>=S.w||y>=S.h) return;
+  if(S.pickWhite){
+    var d=S.base.data, k=(y*S.w+x)*4, acc=[0,0,0], n=0;
+    for(var dy=-3;dy<=3;dy++) for(var dx=-3;dx<=3;dx++){
+      var px=clamp(x+dx,0,S.w-1), py=clamp(y+dy,0,S.h-1), kk=(py*S.w+px)*4;
+      acc[0]+=d[kk]; acc[1]+=d[kk+1]; acc[2]+=d[kk+2]; n++;
+    }
+    S.pickWhite=false;
+    applyWB([acc[0]/n,acc[1]/n,acc[2]/n]);
+    toast("흰색 기준을 지정했습니다. R 이득 "+S.gain[0].toFixed(2)+" / B 이득 "+S.gain[2].toFixed(2));
+    return;
+  }
+  var lab=sampleAt(x,y,9);
+  if(!lab) return;
+  S.pts.push({x:x,y:y,kind:S.mode,lab:lab});
+  redraw(); measure();
+});
+
+$("btn-run").onclick=function(){
+  if(!S.cur) return;
+  var r=classify(S.cur);
+  S.res=r; applySeasonAccent(TYPES[r.key].season); render(r);
+};
+
+/* 임베드 환경에서는 Clipboard API가 차단된다 — 실패를 삼키지 말고 사실대로 알린다 */
+function copyHex(hx){
+  var txt=hx.toUpperCase();
+  function fallback(){
+    try{
+      var ta=document.createElement("textarea");
+      ta.value=hx; ta.setAttribute("readonly",""); 
+      ta.style.cssText="position:fixed;top:-1000px;opacity:0";
+      document.body.appendChild(ta); ta.select();
+      var ok=document.execCommand&&document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast(ok? txt+" 복사됨" : txt+" — 복사가 차단됐습니다. 직접 선택해 복사하세요.");
+    }catch(err){ toast(txt+" — 복사가 차단됐습니다. 직접 선택해 복사하세요."); }
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(hx).then(function(){ toast(txt+" 복사됨"); }, fallback);
+  } else fallback();
+}
+
+document.addEventListener("click",function(e){
+  var sw=e.target.closest? e.target.closest(".sw") : null;
+  if(sw){
+    var hx=sw.getAttribute("data-hex");
+    copyHex(hx);
+    if(S.drapeList){ var i=S.drapeList.map(function(s){return s.hex;}).indexOf(hx);
+      if(i>=0){ S.drapeIdx=i; S.drape="best"; segSet(["d-best","d-worst","d-split"],"d-best");
+        Array.prototype.forEach.call($("drape-strip").children,function(b){ b.setAttribute("aria-pressed",String(+b.dataset.i===i)); });
+        drawDrape(); } }
+    return;
+  }
+  var db=e.target.closest? e.target.closest("#drape-strip button") : null;
+  if(db){
+    S.drapeIdx=+db.dataset.i;
+    Array.prototype.forEach.call($("drape-strip").children,function(b){ b.setAttribute("aria-pressed",String(b===db)); });
+    drawDrape();
+  }
+});
+["d-best","d-worst","d-split"].forEach(function(id){
+  $(id).onclick=function(){ S.drape=id.split("-")[1]; segSet(["d-best","d-worst","d-split"],id); drawDrape(); };
+});
+
+drawDrape();
+</script>
