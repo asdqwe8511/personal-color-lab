@@ -36,6 +36,8 @@ body{
   margin:0; background:var(--ground); color:var(--ink);
   font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
   line-height:1.62; -webkit-font-smoothing:antialiased; font-size:15.5px;
+  /* 한글은 단어 중간에서 끊으면 안 된다 — 기본값은 아무 글자에서나 끊는다 */
+  word-break:keep-all; overflow-wrap:break-word;
 }
 h1,h2,h3{margin:0; text-wrap:balance; font-weight:400}
 p{margin:0}
