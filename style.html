@@ -68,6 +68,28 @@
   border-radius:2px; padding:4px 8px; text-decoration:none; color:var(--ink-2); cursor:pointer}
 .qrow .shops a:hover, .qrow button:hover{border-color:var(--accent); color:var(--ink)}
 .qbox{border:1px solid var(--rule); border-radius:3px; overflow:hidden}
+.disclosure{display:flex; gap:10px; align-items:flex-start; border:1px solid var(--rule-2);
+  background:var(--surface-2); border-radius:3px; padding:11px 14px; font-size:13px;
+  color:var(--ink-2); line-height:1.55; margin-bottom:16px}
+.disclosure svg{flex:none; margin-top:2px; color:var(--ink-3)}
+.disclosure b{color:var(--ink); font-weight:600}
+.shopcat{margin-bottom:24px}
+.shopcat > .tag{display:block; margin-bottom:10px}
+.prods{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:12px}
+.prod{border:1px solid var(--rule); border-radius:3px; background:var(--surface);
+  overflow:hidden; display:flex; flex-direction:column; text-decoration:none; color:inherit}
+.prod:hover{border-color:var(--accent)}
+.prod:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.prod img{width:100%; aspect-ratio:1; object-fit:cover; display:block; background:var(--sunken)}
+.prod .pb{padding:9px 10px 10px; display:flex; flex-direction:column; gap:5px; flex:1}
+.prod .nm{font-size:12.5px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2;
+  -webkit-box-orient:vertical; overflow:hidden}
+.prod .pr{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:500; margin-top:auto}
+.prod .de{display:flex; align-items:center; gap:5px; font-size:10.5px; color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace}
+.prod .de i{width:11px; height:11px; border-radius:2px; border:1px solid var(--rule-2); flex:none}
+.prod .de b{font-weight:500; color:var(--ink-2)}
+.shop-empty{font-size:13px; color:var(--ink-3); padding:10px 0}
 </style>
 
 <div class="mast"><div class="wrap mast-in">
@@ -132,11 +154,30 @@
 <section id="shop-sec" hidden><div class="wrap">
   <div class="shead">
     <span class="snum">04</span>
-    <div><h2>검색어</h2><p>처방을 검색어로 옮겼습니다. 누르면 해당 쇼핑몰 검색 결과가 새 창에서 열립니다.</p></div>
+    <div><h2>실제 상품</h2><p>상품 사진에서 옷 색을 직접 추출해, 처방 팔레트와 가까운 순으로 정렬했습니다.
+    색 이름으로 검색하지 않고 <b>실제 색을 재서</b> 고릅니다.</p></div>
   </div>
-  <div class="qbox" id="queries"></div>
-  <p class="note" style="margin-top:12px">이 링크는 각 쇼핑몰의 <b>일반 검색 페이지</b>입니다.
-  제휴 링크가 아니며 수수료가 발생하지 않습니다. 쇼핑몰이 검색 주소 형식을 바꾸면 링크가 동작하지 않을 수 있습니다.</p>
+
+  <div class="disclosure">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <path d="M8 4.6v4.2M8 11v.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <span>이 페이지는 쿠팡 파트너스 활동의 일환으로, <b>이에 따른 일정액의 수수료를 제공받습니다.</b></span>
+  </div>
+
+  <div class="btnrow" style="margin-bottom:16px">
+    <button class="btn primary" id="btn-shop">내 팔레트에 맞는 상품 찾기</button>
+    <span class="note" id="shop-status"></span>
+  </div>
+
+  <div id="shop-results"></div>
+
+  <details class="more" style="margin-top:20px">
+    <summary>검색어로 직접 찾아보기</summary>
+    <div class="inner"><div class="qbox" id="queries"></div>
+      <p class="note">각 쇼핑몰의 일반 검색 페이지입니다. 쿠팡 외 링크는 제휴 링크가 아닙니다.</p></div>
+  </details>
 </div></section>
 
 <footer><div class="wrap">
@@ -144,6 +185,8 @@
   카탈로그 없이 브랜드·가격·재고를 지어내면 그럴듯한 가짜가 되고, 링크를 누른 사람이 손해를 봅니다.
   그래서 &ldquo;무엇을 사야 하는지&rdquo;를 색·목선·실루엣·소재까지 특정해 주고, 구매는 실제 쇼핑몰 검색으로 넘깁니다.
   상품 데이터가 연결되면 이 자리에 실제 상품이 들어갑니다.</p>
+  <p style="margin-top:12px"><strong>제휴 고지.</strong> 이 페이지는 쿠팡 파트너스 활동의 일환으로,
+  이에 따른 일정액의 수수료를 제공받습니다. 상품 가격·재고는 쿠팡 기준이며 변동될 수 있습니다.</p>
   <p style="margin-top:12px"><strong>이 처방의 성격.</strong> 스타일링에서 쓰는 관습적 규칙을 측정값에 대응시킨 것이지
   검증된 데이터에서 학습한 결과가 아닙니다. &ldquo;피할 것&rdquo;은 입으면 안 된다는 뜻이 아니라,
   비율·색 대비로 봤을 때 덜 부각된다는 뜻입니다.</p>
@@ -153,6 +196,7 @@
 <script type="module">
 import { neutrals, NECK, SILHOUETTE, FABRIC, patternFor, outfits, queries, SHOPS } from "./assets/style.js";
 import { dressedSVG, BOTTOM_TYPE } from "./assets/dress.js";
+import { match as shopMatch } from "./assets/shop.js";
 
 const $ = id => document.getElementById(id);
 function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show");
@@ -242,6 +286,49 @@ function render(){
     '<div class="body"><h4>' + o.name + '</h4><p class="why">' + o.why + '</p><dl>' +
     o.items.map(it => "<dt>" + it.role + "</dt><dd>" + it.c.name + " " + it.c.hex.toUpperCase() + "</dd>").join("") +
     "</dl></div></div>").join("");
+
+  /* 실제 상품 — 카테고리로 검색하고 색은 이미지에서 잰다 */
+  const neck = (N.good[0] || "").replace("대부분의 목선", "");
+  const botKey = (S.bottom.split(",")[0].split("·")[0] || "").trim();
+  const CATS = [
+    { label:"니트",   keys:[neck ? neck+" 니트" : "여성 니트", "니트 스웨터"] },
+    { label:"티셔츠", keys:[neck ? neck+" 티셔츠" : "여성 티셔츠", "여성 반팔티"] },
+    { label:"하의",   keys:[botKey ? botKey+" 팬츠" : "여성 팬츠", "여성 슬랙스"] },
+    { label:"원피스", keys:["여성 원피스"] },
+    { label:"아우터", keys:["여성 자켓"] }
+  ];
+  const palette = best.slice(0, 8).concat(NU).map(c => ({ hex:c.hex, name:c.name }));
+
+  $("btn-shop").onclick = async function(){
+    this.disabled = true;
+    const st = $("shop-status"), box = $("shop-results");
+    box.innerHTML = "";
+    let found = 0;
+    for (const cat of CATS){
+      st.textContent = cat.label + " 찾는 중…";
+      let rows = [];
+      try { rows = await shopMatch(cat.keys, palette, { pool:20, want:6 }); }
+      catch(e){ rows = []; }
+      if (!rows.length) continue;
+      found += rows.length;
+      const sec = document.createElement("div");
+      sec.className = "shopcat";
+      sec.innerHTML = '<span class="tag">' + cat.label + '</span><div class="prods">' +
+        rows.map(r =>
+          '<a class="prod" href="' + r.url + '" target="_blank" rel="noopener noreferrer sponsored">' +
+          '<img loading="lazy" alt="" src="' + r.image + '">' +
+          '<div class="pb"><span class="nm">' + r.name + '</span>' +
+          '<span class="de"><i style="background:' + r.hex + '"></i>→' +
+          '<i style="background:' + r.matchedHex + '"></i>' +
+          '<b>ΔE ' + r.dE + '</b> ' + r.matched + '</span>' +
+          '<span class="pr">' + Number(r.price).toLocaleString("ko-KR") + '원</span></div></a>').join("") +
+        "</div>";
+      box.appendChild(sec);
+    }
+    st.textContent = found ? found + "개 상품을 찾았습니다. ΔE 가 작을수록 처방 색에 가깝습니다."
+                           : "상품을 찾지 못했습니다. 잠시 후 다시 시도해 주세요.";
+    this.disabled = false;
+  };
 
   /* 검색어 */
   const qs = queries(best[0] ? best[0].name : "베이지", face.key, body.key);
