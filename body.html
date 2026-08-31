@@ -19,10 +19,19 @@
 <style>
 .shape-name{font-family:"Gowun Batang",serif; font-weight:700; letter-spacing:-.025em;
   font-size:clamp(32px,2rem + 2.6vw,56px); line-height:1.12}
-.form{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px}
+.inputwrap{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,268px); gap:20px; align-items:start}
+@media(max-width:820px){ .inputwrap{grid-template-columns:1fr} }
+.figcol{position:sticky; top:72px}
+@media(max-width:820px){ .figcol{position:static} }
+.fighint{font-size:11.5px; color:var(--ink-3); text-align:center; margin-top:8px; line-height:1.45}
+.fgroup + .fgroup{margin-top:4px}
+.fgroup > .tag{display:block; margin-bottom:9px}
+.form{display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:12px}
 .field{display:flex; flex-direction:column; gap:5px}
 .field label{font-size:12.5px; color:var(--ink-2)}
 .field label b{color:var(--ink); font-weight:500}
+.field .how{font-size:11px; color:var(--ink-3); line-height:1.4; min-height:2.8em}
+.field.on .inwrap{border-color:var(--accent); background:var(--accent-soft)}
 .field .inwrap{display:flex; align-items:center; gap:6px; border:1px solid var(--rule-2);
   border-radius:2px; background:var(--surface-2); padding:0 10px}
 .field .inwrap:focus-within{outline:2px solid var(--accent); outline-offset:-1px}
@@ -77,7 +86,7 @@
 <header class="hero"><div class="wrap">
   <h1>사진으로 치수를 <em>추정하지 않습니다.</em></h1>
   <p class="lede">사진 기반 치수 추정은 오차가 커서 옷 사이즈처럼 실패 비용이 큰 판단에는 쓸 수 없습니다.
-  줄자로 잰 다섯 값을 받아 체형과 잘 맞는 실루엣, 기성복 가늠 사이즈를 계산합니다.</p>
+  줄자로 잰 값을 부위별로 받아 체형과 잘 맞는 실루엣, 기성복 가늠 사이즈를 계산합니다. 필수는 다섯 개, 나머지는 넣을수록 정밀해집니다.</p>
 </div></header>
 
 <section id="input"><div class="wrap">
@@ -85,36 +94,40 @@
     <span class="snum">01</span>
     <div>
       <h2>치수 입력</h2>
-      <p>가슴·허리·엉덩이는 <b>둘레</b>, 어깨는 양쪽 어깨끝 사이 <b>너비</b>입니다. 줄자는 조이지 말고 살에 닿을 정도로만 두르세요.</p>
+      <p>가슴·허리·엉덩이·목·허벅지는 <b>둘레</b>, 어깨는 어깨끝 사이 <b>너비</b>입니다.
+      줄자는 조이지 말고 살에 닿을 정도로만 두르세요. 칸을 누르면 오른쪽 도식에 재는 위치가 표시됩니다.</p>
     </div>
   </div>
 
-  <div class="panel">
-    <div class="panel-h"><span class="tag">치수</span>
-      <div class="seg" role="group" aria-label="사이즈 체계" style="margin-left:auto">
-        <button id="sys-w" aria-pressed="true">여성복 사이즈</button>
-        <button id="sys-m" aria-pressed="false">남성복 사이즈</button>
+  <div class="inputwrap">
+    <div class="panel">
+      <div class="panel-h"><span class="tag">치수</span>
+        <div class="seg" role="group" aria-label="사이즈 체계" style="margin-left:auto">
+          <button id="sys-w" aria-pressed="true">여성복</button>
+          <button id="sys-m" aria-pressed="false">남성복</button>
+        </div>
+      </div>
+      <div class="panel-b">
+        <div class="fgroup" id="g-req"><span class="tag">필수 — 체형 분류에 쓰입니다</span><div class="form"></div></div>
+        <div class="fgroup" id="g-top"><span class="tag">상의 — 선택</span><div class="form"></div></div>
+        <div class="fgroup" id="g-bottom"><span class="tag">하의 — 선택</span><div class="form"></div></div>
+        <div class="fgroup" id="g-etc"><span class="tag">기타 — 선택</span><div class="form"></div></div>
+        <div class="errs" id="errs" hidden><ul id="errs-list"></ul></div>
+        <div class="btnrow">
+          <button class="btn primary" id="btn-run">체형 분석하기</button>
+          <button class="btn" id="btn-demo">예시 값 채우기</button>
+          <button class="btn" id="btn-clear">모두 지우기</button>
+        </div>
+        <p class="note">선택 항목은 비워도 됩니다 — 넣으면 그만큼 사이즈 가늠이 정밀해집니다.
+        입력값은 이 브라우저에만 저장되며 어디에도 전송되지 않습니다.</p>
       </div>
     </div>
-    <div class="panel-b">
-      <div class="form">
-        <div class="field"><label for="f-height"><b>키</b></label>
-          <div class="inwrap"><input id="f-height" type="number" inputmode="decimal" placeholder="165"><span class="unit">cm</span></div></div>
-        <div class="field"><label for="f-shoulder"><b>어깨너비</b> 어깨끝~어깨끝</label>
-          <div class="inwrap"><input id="f-shoulder" type="number" inputmode="decimal" placeholder="39"><span class="unit">cm</span></div></div>
-        <div class="field"><label for="f-bust"><b>가슴둘레</b> 가장 나온 지점</label>
-          <div class="inwrap"><input id="f-bust" type="number" inputmode="decimal" placeholder="88"><span class="unit">cm</span></div></div>
-        <div class="field"><label for="f-waist"><b>허리둘레</b> 가장 들어간 지점</label>
-          <div class="inwrap"><input id="f-waist" type="number" inputmode="decimal" placeholder="68"><span class="unit">cm</span></div></div>
-        <div class="field"><label for="f-hip"><b>엉덩이둘레</b> 가장 나온 지점</label>
-          <div class="inwrap"><input id="f-hip" type="number" inputmode="decimal" placeholder="93"><span class="unit">cm</span></div></div>
+
+    <div class="figcol">
+      <div class="fig">
+        <svg id="figure" viewBox="0 0 220 400" role="img" aria-labelledby="fig-t"><title id="fig-t">입력한 치수로 그린 체형 도식</title></svg>
+        <p class="fighint" id="fighint">칸을 누르면 재는 위치가 표시됩니다</p>
       </div>
-      <div class="errs" id="errs" hidden><ul id="errs-list"></ul></div>
-      <div class="btnrow">
-        <button class="btn primary" id="btn-run">체형 분석하기</button>
-        <button class="btn" id="btn-demo">예시 값 채우기</button>
-      </div>
-      <p class="note">입력값은 이 브라우저 안에서만 계산되며 어디에도 전송되지 않습니다.</p>
     </div>
   </div>
 </div></section>
@@ -125,24 +138,28 @@
     <div><h2>체형</h2><p>어깨·허리·엉덩이의 비율로 계산한 결과입니다.</p></div>
   </div>
 
-  <div class="figwrap">
-    <div class="fig"><svg id="figure" viewBox="0 0 220 400" role="img" aria-labelledby="fig-t"><title id="fig-t">입력한 치수로 그린 체형 도식</title></svg></div>
+  <div class="verdict">
     <div>
       <div class="shape-name" id="r-name">—</div>
       <div class="verdict-en mono" id="r-en">—</div>
       <div class="season-rule" style="background:var(--accent)"></div>
       <p class="verdict-desc" id="r-desc"></p>
-      <div class="panel" style="margin-top:20px">
-        <div class="panel-h"><span class="tag">체형 점수</span></div>
-        <div class="panel-b"><div class="bars" id="bars"></div>
-          <p class="note" id="margin-note"></p></div>
-      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><span class="tag">체형 점수</span></div>
+      <div class="panel-b"><div class="bars" id="bars"></div>
+        <p class="note" id="margin-note"></p></div>
     </div>
   </div>
 
   <div class="reco" style="margin-top:26px">
     <div class="good"><span class="tag">잘 맞는 실루엣</span><ul id="reco-good"></ul></div>
     <div class="bad"><span class="tag">덜 맞는 실루엣</span><ul id="reco-bad"></ul></div>
+  </div>
+
+  <div class="panel" id="fit-panel" style="margin-top:20px" hidden>
+    <div class="panel-h"><span class="tag">치수에서 나온 핏 메모</span></div>
+    <div class="panel-b"><ul id="fit-list" style="margin:0; padding-left:18px; display:flex; flex-direction:column; gap:7px"></ul></div>
   </div>
 
   <div class="stack" id="stack">
@@ -178,74 +195,147 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
-import { SHAPES, classify, sizes, validate } from "./assets/body.js";
+import { FIELDS, SHAPES, classify, sizes, fitNotes, validate, CIRC_TO_WIDTH } from "./assets/body.js";
 
 const $ = id => document.getElementById(id);
-const F = ["height","shoulder","bust","waist","hip"];
-let system = "women";
+let system = "women", focusedK = null, hoverK = null;
+/* 클릭해야만 보이면 기능을 발견하기 어렵다 — 호버로도 미리 보여준다 */
+const focusedOf = () => focusedK || hoverK;
 
 function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show");
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2100); }
-function read(){ const o={}; F.forEach(k=>o[k]=parseFloat($("f-"+k).value)); return o; }
+
+/* ── 입력 칸 생성 ────────────────────────────────────────────── */
+const GROUP = { req:"g-req", top:"g-top", bottom:"g-bottom", etc:"g-etc" };
+FIELDS.forEach(f => {
+  const host = $(GROUP[f.req ? "req" : f.group]).querySelector(".form");
+  const d = document.createElement("div");
+  d.className = "field"; d.dataset.k = f.k;
+  d.innerHTML = '<label for="f-' + f.k + '"><b>' + f.ko + '</b></label>' +
+    '<div class="inwrap"><input id="f-' + f.k + '" type="number" inputmode="decimal" ' +
+    'step="any" placeholder="' + f.ph + '" aria-describedby="h-' + f.k + '">' +
+    '<span class="unit">' + f.unit + '</span></div>' +
+    '<span class="how" id="h-' + f.k + '">' + f.how + '</span>';
+  host.appendChild(d);
+  const input = d.querySelector("input");
+  input.addEventListener("focus", () => { focusedK = f.k; markFocus(); paint(); });
+  input.addEventListener("blur", () => { focusedK = null; markFocus(); paint(); });
+  d.addEventListener("pointerenter", () => { hoverK = f.k; markFocus(); paint(); });
+  d.addEventListener("pointerleave", () => { hoverK = null; markFocus(); paint(); });
+  input.addEventListener("input", () => { save(); paint(); if (!$("result").hidden) run(true); });
+  input.addEventListener("keydown", e => { if (e.key === "Enter") run(); });
+});
+function markFocus(){
+  const cur = focusedOf();
+  document.querySelectorAll(".field").forEach(d => d.classList.toggle("on", d.dataset.k === cur));
+  const f = FIELDS.find(x => x.k === cur);
+  $("fighint").textContent = f ? f.ko + " — " + f.how : "칸을 누르면 재는 위치가 표시됩니다";
+}
+function read(){
+  const o = {};
+  FIELDS.forEach(f => { const v = parseFloat($("f-" + f.k).value); if (isFinite(v)) o[f.k] = v; });
+  return o;
+}
+function save(){ try{ localStorage.setItem("body-input", JSON.stringify(read())); }catch(e){} }
+function restore(){
+  let v = null; try{ v = JSON.parse(localStorage.getItem("body-input") || "null"); }catch(e){}
+  if (!v) return false;
+  FIELDS.forEach(f => { if (v[f.k] != null) $("f-" + f.k).value = v[f.k]; });
+  return true;
+}
 
 /* ── 체형 도식 ───────────────────────────────────────────────
  * 둘레를 폭으로 환산해 그린다. 단면을 깊이 0.72배의 타원으로 보면
  * 둘레 ≈ 2.74 × 폭. 정밀한 인체 렌더가 아니라 비율을 보여주는 도식이다. */
-function drawFigure(m){
+const DEFAULT = { height:165, shoulder:39, bust:88, waist:68, hip:93,
+                  neck:35, sleeve:58, wrist:15, thigh:54, inseam:75, calf:35, foot:245 };
+function paint(){
+  const raw = read();
+  const m = Object.assign({}, DEFAULT, raw);
+  const partial = Object.keys(raw).length < 5;
   const cx = 110, yTop = 14, yFoot = 388, H = yFoot - yTop;
-  const s = H / m.height;                       // px per cm
-  const w = c => (c / 2.74) * s / 2;            // 둘레 → 반폭(px)
+  const s = H / m.height;
+  const w = c => (c / CIRC_TO_WIDTH) * s / 2;
   const shW = (m.shoulder * s) / 2;
-  const bW = w(m.bust), wW = w(m.waist), hW = w(m.hip);
-  const yHead = yTop, headH = (m.height / 7.6) * s;
-  const yShoulder = yTop + H * 0.185, yBust = yTop + H * 0.265;
+  const bW = w(m.bust), wW = w(m.waist), hW = w(m.hip), tW = w(m.thigh) * 0.62;
+  const headH = (m.height / 7.6) * s, yHead = yTop;
+  const yNeck = yTop + H * 0.155, yShoulder = yTop + H * 0.185, yBust = yTop + H * 0.265;
   const yWaist = yTop + H * 0.365, yHip = yTop + H * 0.475;
-  const yKnee = yTop + H * 0.725;
-
+  const yThigh = yTop + H * 0.545, yCalf = yTop + H * 0.78;
   const P = [];
-  P.push('<ellipse cx="'+cx+'" cy="'+(yHead+headH/2)+'" rx="'+(headH*0.36)+'" ry="'+(headH/2)+
-          '" fill="none" stroke="var(--ink-2)" stroke-width="1.6"/>');
-  P.push('<line x1="'+cx+'" y1="'+(yHead+headH)+'" x2="'+cx+'" y2="'+yShoulder+
-          '" stroke="var(--ink-2)" stroke-width="1.6"/>');
-  // 몸통 — 어깨→가슴→허리→엉덩이를 좌우 대칭 곡선으로
-  P.push('<path d="M'+(cx-shW)+' '+yShoulder+
-    ' C'+(cx-shW)+' '+(yShoulder+8)+' '+(cx-bW)+' '+(yBust-8)+' '+(cx-bW)+' '+yBust+
-    ' C'+(cx-bW)+' '+(yBust+14)+' '+(cx-wW)+' '+(yWaist-14)+' '+(cx-wW)+' '+yWaist+
-    ' C'+(cx-wW)+' '+(yWaist+16)+' '+(cx-hW)+' '+(yHip-16)+' '+(cx-hW)+' '+yHip+
-    ' L'+(cx+hW)+' '+yHip+
-    ' C'+(cx+hW)+' '+(yHip-16)+' '+(cx+wW)+' '+(yWaist+16)+' '+(cx+wW)+' '+yWaist+
-    ' C'+(cx+wW)+' '+(yWaist-14)+' '+(cx+bW)+' '+(yBust+14)+' '+(cx+bW)+' '+yBust+
-    ' C'+(cx+bW)+' '+(yBust-8)+' '+(cx+shW)+' '+(yShoulder+8)+' '+(cx+shW)+' '+yShoulder+
+  const dim = partial ? ' opacity=".45"' : "";
+
+  P.push('<g' + dim + '>');
+  P.push('<ellipse cx="' + cx + '" cy="' + (yHead + headH / 2) + '" rx="' + (headH * .36) +
+    '" ry="' + (headH / 2) + '" fill="none" stroke="var(--ink-2)" stroke-width="1.6"/>');
+  P.push('<line x1="' + cx + '" y1="' + (yHead + headH) + '" x2="' + cx + '" y2="' + yShoulder +
+    '" stroke="var(--ink-2)" stroke-width="1.6"/>');
+  P.push('<path d="M' + (cx - shW) + ' ' + yShoulder +
+    ' C' + (cx - shW) + ' ' + (yShoulder + 8) + ' ' + (cx - bW) + ' ' + (yBust - 8) + ' ' + (cx - bW) + ' ' + yBust +
+    ' C' + (cx - bW) + ' ' + (yBust + 14) + ' ' + (cx - wW) + ' ' + (yWaist - 14) + ' ' + (cx - wW) + ' ' + yWaist +
+    ' C' + (cx - wW) + ' ' + (yWaist + 16) + ' ' + (cx - hW) + ' ' + (yHip - 16) + ' ' + (cx - hW) + ' ' + yHip +
+    ' L' + (cx + hW) + ' ' + yHip +
+    ' C' + (cx + hW) + ' ' + (yHip - 16) + ' ' + (cx + wW) + ' ' + (yWaist + 16) + ' ' + (cx + wW) + ' ' + yWaist +
+    ' C' + (cx + wW) + ' ' + (yWaist - 14) + ' ' + (cx + bW) + ' ' + (yBust + 14) + ' ' + (cx + bW) + ' ' + yBust +
+    ' C' + (cx + bW) + ' ' + (yBust - 8) + ' ' + (cx + shW) + ' ' + (yShoulder + 8) + ' ' + (cx + shW) + ' ' + yShoulder +
     ' Z" fill="var(--accent)" fill-opacity=".13" stroke="var(--accent)" stroke-width="1.8"/>');
-  // 다리
-  const legTop = hW * 0.92, legKnee = hW * 0.46, legFoot = hW * 0.30;
   [-1, 1].forEach(sg => {
-    const x0 = cx + sg * legTop * 0.5, xk = cx + sg * legKnee, xf = cx + sg * legFoot;
-    P.push('<path d="M'+(x0 - sg*legTop*0.5)+' '+yHip+' L'+(x0 + sg*legTop*0.5)+' '+yHip+
-      ' L'+(xf + sg*4)+' '+yFoot+' L'+(xf - sg*4)+' '+yFoot+
-      ' Z" fill="var(--accent)" fill-opacity=".08" stroke="var(--accent)" stroke-width="1.4"/>');
+    const inner = cx + sg * 3;
+    P.push('<path d="M' + inner + ' ' + yHip + ' L' + (cx + sg * hW) + ' ' + yHip +
+      ' L' + (cx + sg * tW * 1.5) + ' ' + yThigh +
+      ' L' + (cx + sg * w(m.calf) * 1.3) + ' ' + yCalf +
+      ' L' + (cx + sg * w(m.calf) * 0.75) + ' ' + yFoot +
+      ' L' + inner + ' ' + yFoot + ' Z" fill="var(--accent)" fill-opacity=".08" stroke="var(--accent)" stroke-width="1.3"/>');
   });
-  // 계측선
-  const line = (y, half, label) => {
-    P.push('<line x1="'+(cx-half-14)+'" y1="'+y+'" x2="'+(cx+half+14)+'" y2="'+y+
-      '" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 2.5"/>');
-    P.push('<text class="figlab" x="'+(cx+half+17)+'" y="'+(y+3)+'">'+label+'</text>');
+  P.push('</g>');
+
+  /* 계측선 — 입력 중인 항목만 강조 */
+  const on = k => focusedOf() === k;
+  const line = (k, y, half, label) => {
+    const hot = on(k);
+    P.push('<line x1="' + (cx - half - 13) + '" y1="' + y + '" x2="' + (cx + half + 13) + '" y2="' + y +
+      '" stroke="' + (hot ? "var(--accent)" : "var(--ink-3)") + '" stroke-width="' + (hot ? 2.2 : 1) +
+      '" stroke-dasharray="' + (hot ? "" : "3 2.5") + '"/>');
+    P.push('<text class="figlab" x="' + (cx + half + 16) + '" y="' + (y + 3) + '"' +
+      (hot ? ' fill="var(--accent)" font-weight="600"' : '') + '>' + label + '</text>');
   };
-  line(yShoulder, shW, "어깨 " + m.shoulder);
-  line(yBust, bW, "가슴 " + m.bust);
-  line(yWaist, wW, "허리 " + m.waist);
-  line(yHip, hW, "엉덩이 " + m.hip);
+  const val = k => raw[k] != null ? " " + raw[k] : "";
+  line("shoulder", yShoulder, shW, "어깨" + val("shoulder"));
+  line("bust", yBust, bW, "가슴" + val("bust"));
+  line("waist", yWaist, wW, "허리" + val("waist"));
+  line("hip", yHip, hW, "엉덩이" + val("hip"));
+  if (on("neck")) line("neck", yNeck, w(m.neck), "목" + val("neck"));
+  if (on("thigh")) line("thigh", yThigh, tW * 1.5, "허벅지" + val("thigh"));
+  if (on("calf")) line("calf", yCalf, w(m.calf) * 1.3, "종아리" + val("calf"));
+  if (on("height")) {
+    P.push('<line x1="14" y1="' + yTop + '" x2="14" y2="' + yFoot + '" stroke="var(--accent)" stroke-width="2.2"/>');
+    P.push('<text class="figlab" x="18" y="' + (yTop + H / 2) + '" fill="var(--accent)" font-weight="600">키' + val("height") + '</text>');
+  }
+  if (on("inseam")) {
+    P.push('<line x1="' + (cx + 6) + '" y1="' + yHip + '" x2="' + (cx + 6) + '" y2="' + yFoot + '" stroke="var(--accent)" stroke-width="2.2"/>');
+    P.push('<text class="figlab" x="' + (cx + 10) + '" y="' + (yHip + (yFoot - yHip) / 2) + '" fill="var(--accent)" font-weight="600">인심' + val("inseam") + '</text>');
+  }
+  if (on("sleeve") || on("wrist")) {
+    const yw = yTop + H * 0.46;
+    P.push('<line x1="' + (cx - shW) + '" y1="' + yShoulder + '" x2="' + (cx - shW - 12) + '" y2="' + yw + '" stroke="var(--accent)" stroke-width="2.2"/>');
+    P.push('<text class="figlab" x="' + (cx - shW - 46) + '" y="' + (yw + 10) + '" fill="var(--accent)" font-weight="600">' +
+      (on("wrist") ? "손목" + val("wrist") : "팔길이" + val("sleeve")) + '</text>');
+  }
+  if (on("foot")) {
+    P.push('<line x1="' + (cx - 26) + '" y1="' + (yFoot + 5) + '" x2="' + (cx + 26) + '" y2="' + (yFoot + 5) + '" stroke="var(--accent)" stroke-width="2.2"/>');
+    P.push('<text class="figlab" x="' + (cx + 30) + '" y="' + (yFoot + 8) + '" fill="var(--accent)" font-weight="600">발' + val("foot") + '</text>');
+  }
   $("figure").innerHTML = '<title id="fig-t">입력한 치수로 그린 체형 도식</title>' + P.join("");
 }
 
 /* ── 결과 ────────────────────────────────────────────────────── */
-function run(){
+function run(quiet){
   const m = read();
   const errs = validate(m);
   if (errs.length){
     $("errs").hidden = false;
     $("errs-list").innerHTML = errs.map(e => "<li>" + e + "</li>").join("");
-    $("result").hidden = true;
+    if (!quiet) { $("result").hidden = true; $("errs").scrollIntoView({behavior:"smooth", block:"center"}); }
     return;
   }
   $("errs").hidden = true;
@@ -255,7 +345,6 @@ function run(){
   $("r-en").textContent = T.en + "  ·  어깨/엉덩이 " + c.ratios.SH.toFixed(2) +
     "  ·  허리/엉덩이 " + c.ratios.WH.toFixed(2);
   $("r-desc").textContent = T.desc;
-  drawFigure(m);
 
   const vals = Object.entries(c.scores).sort((a,b)=>b[1]-a[1]);
   const lo = Math.min(...vals.map(v=>v[1])), hi = Math.max(...vals.map(v=>v[1]));
@@ -269,20 +358,25 @@ function run(){
     : "1·2위 차이가 뚜렷해 " + T.ko + "으로 볼 수 있습니다.";
   $("reco-good").innerHTML = T.good.map(x=>"<li>"+x+"</li>").join("");
   $("reco-bad").innerHTML = T.avoid.map(x=>"<li>"+x+"</li>").join("");
+
+  const notes = fitNotes(m);
+  $("fit-panel").hidden = notes.length === 0;
+  $("fit-list").innerHTML = notes.map(x => '<li style="font-size:13.5px; line-height:1.55; color:var(--ink-2)">' + x + "</li>").join("");
+
   $("size-body").innerHTML = sizes(m, system).map(r =>
     "<tr><td>"+r.key+'</td><td class="num">'+r.value+"</td><td>"+r.note+"</td></tr>").join("");
   $("ratio-body").innerHTML = [
-    ["어깨 / 엉덩이", c.ratios.SH.toFixed(3), c.ratios.SH > 1.05 ? "어깨가 더 넓습니다"
-      : c.ratios.SH < 0.95 ? "엉덩이가 더 넓습니다" : "위아래 폭이 비슷합니다"],
+    ["어깨 / 엉덩이", c.ratios.SH.toFixed(3), c.ratios.SH > 1.18 ? "어깨가 더 넓습니다"
+      : c.ratios.SH < 1.02 ? "엉덩이가 더 넓습니다" : "위아래 폭이 비슷합니다"],
     ["허리 / 엉덩이", c.ratios.WH.toFixed(3), c.ratios.WH < 0.75 ? "허리가 뚜렷하게 들어갑니다"
       : c.ratios.WH > 0.88 ? "허리 굴곡이 완만합니다" : "중간 정도의 굴곡입니다"],
     ["가슴 / 허리", c.ratios.BW.toFixed(3), c.ratios.BW > 1.25 ? "상체 굴곡이 큽니다"
       : c.ratios.BW < 1.08 ? "상체 굴곡이 완만합니다" : "중간 정도입니다"]
   ].map(r => "<tr><td>"+r[0]+'</td><td class="num">'+r[1]+"</td><td>"+r[2]+"</td></tr>").join("");
 
-  try{ localStorage.setItem("body-result", JSON.stringify({ key:c.key, ko:T.ko, sizes:sizes(m, system) })); }catch(e){}
+  try{ localStorage.setItem("body-result", JSON.stringify({ key:c.key, ko:T.ko })); }catch(e){}
   renderStack(T);
-  $("result").scrollIntoView({ behavior:"smooth", block:"start" });
+  if (!quiet) $("result").scrollIntoView({ behavior:"smooth", block:"start" });
 }
 
 /* ── 세 축 종합 ──────────────────────────────────────────────── */
@@ -290,8 +384,7 @@ function renderStack(bodyT){
   let color = null, face = null;
   try{ color = JSON.parse(localStorage.getItem("pc-result") || "null"); }catch(e){}
   try{ face  = JSON.parse(localStorage.getItem("face-result") || "null"); }catch(e){}
-  const items = [];
-  items.push('<div class="item"><span class="tag">체형</span><b>' + bodyT.ko + '</b></div>');
+  const items = ['<div class="item"><span class="tag">체형</span><b>' + bodyT.ko + '</b></div>'];
   if (color) items.push('<div class="item"><span class="tag">퍼스널 컬러</span><b>' + color.ko +
     '</b><div class="sw">' + (color.lip||[]).map(h=>'<i style="background:'+h.hex+'" title="'+h.name+'"></i>').join("") + '</div></div>');
   if (face) items.push('<div class="item"><span class="tag">얼굴형</span><b>' + face.ko + '</b></div>');
@@ -301,29 +394,35 @@ function renderStack(bodyT){
   if (!face) missing.push('<a href="face.html">얼굴형</a>');
   $("stack-miss").innerHTML = missing.length
     ? missing.join("과 ") + "를 마저 측정하면 세 축을 함께 볼 수 있습니다."
-    : "세 축이 모두 모였습니다. 색은 " + (color ? color.ko : "") + ", 얼굴형은 " +
-      (face ? face.ko : "") + ", 체형은 " + bodyT.ko + "입니다.";
+    : "세 축이 모두 모였습니다. 색은 " + color.ko + ", 얼굴형은 " + face.ko + ", 체형은 " + bodyT.ko + "입니다.";
 }
 
 /* ── 이벤트 ──────────────────────────────────────────────────── */
-$("btn-run").onclick = run;
-F.forEach(k => $("f-"+k).addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
+$("btn-run").onclick = () => run();
 ["sys-w","sys-m"].forEach(id => $(id).onclick = function(){
   system = id === "sys-m" ? "men" : "women";
   ["sys-w","sys-m"].forEach(x => $(x).setAttribute("aria-pressed", String(x===id)));
-  if (!$("result").hidden) run();
+  if (!$("result").hidden) run(true);
 });
+$("btn-clear").onclick = () => {
+  FIELDS.forEach(f => $("f-" + f.k).value = "");
+  $("result").hidden = true; $("errs").hidden = true;
+  save(); paint(); toast("모두 지웠습니다");
+};
 $("btn-demo").onclick = () => {
   const sets = [
-    { height:165, shoulder:39, bust:88, waist:66, hip:94 },
-    { height:160, shoulder:37, bust:84, waist:72, hip:90 },
-    { height:172, shoulder:44, bust:96, waist:80, hip:92 },
-    { height:158, shoulder:36, bust:82, waist:68, hip:97 },
-    { height:168, shoulder:41, bust:94, waist:88, hip:95 }
+    { height:165, shoulder:39, bust:88, waist:66, hip:94, neck:33, sleeve:57, wrist:15, thigh:54, inseam:76, calf:35, foot:240 },
+    { height:160, shoulder:37, bust:84, waist:72, hip:90, neck:32, sleeve:55, wrist:14, thigh:52, inseam:72, calf:34, foot:235 },
+    { height:176, shoulder:46, bust:98, waist:82, hip:94, neck:39, sleeve:62, wrist:17, thigh:57, inseam:82, calf:38, foot:270 },
+    { height:158, shoulder:36, bust:82, waist:68, hip:98, neck:32, sleeve:54, wrist:14, thigh:58, inseam:70, calf:36, foot:230 },
+    { height:170, shoulder:42, bust:96, waist:90, hip:97, neck:38, sleeve:60, wrist:17, thigh:59, inseam:76, calf:38, foot:260 }
   ];
-  const s = sets[Math.floor(Math.random()*sets.length)];
-  F.forEach(k => $("f-"+k).value = s[k]);
+  const v = sets[Math.floor(Math.random()*sets.length)];
+  FIELDS.forEach(f => $("f-" + f.k).value = v[f.k]);
+  save(); paint(); run();
   toast("예시 값입니다. 실제 분석은 본인 치수로 하세요.");
-  run();
 };
+
+markFocus();
+if (restore()) { paint(); run(true); } else paint();
 </script>
