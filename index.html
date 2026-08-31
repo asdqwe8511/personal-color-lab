@@ -32,6 +32,7 @@
   --accent:#2F615C; --accent-ink:#FFFFFF; --accent-soft:#D9E6E4;
   --spring:#daa130; --summer:#0095ce; --autumn:#c6523b; --winter:#ad4baa; --season:#2F615C;
   --shadow:0 1px 2px rgba(20,20,26,.06), 0 8px 24px -12px rgba(20,20,26,.18);
+  --bad:#A8391F; --good:#2F615C; --good-soft:#D9E6E4;
   --step:clamp(.9rem,.6rem + .9vw,1.12rem);
 }
 @media (prefers-color-scheme:dark){
@@ -42,6 +43,7 @@
     --accent:#6FB4AC; --accent-ink:#0E1A19; --accent-soft:#20302E;
     --spring:#bf9610; --summer:#04a6e4; --autumn:#b43623; --winter:#cb64c8; --season:#6FB4AC;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+    --bad:#E2795F; --good:#6FB4AC; --good-soft:#20302E;
   }
 }
 :root[data-theme="dark"]{
@@ -51,9 +53,11 @@
   --accent:#6FB4AC; --accent-ink:#0E1A19; --accent-soft:#20302E;
   --spring:#bf9610; --summer:#04a6e4; --autumn:#b43623; --winter:#cb64c8; --season:#6FB4AC;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+    --bad:#E2795F; --good:#6FB4AC; --good-soft:#20302E;
 }
 
 *{box-sizing:border-box}
+[hidden]{display:none !important}
 body{
   margin:0; background:var(--ground); color:var(--ink);
   font-family:"IBM Plex Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
@@ -73,7 +77,7 @@ button{font:inherit; color:inherit}
 #privacy-pill{min-width:0; overflow:hidden; text-overflow:ellipsis}
 .logo{min-width:0}
 .logo{display:flex; align-items:baseline; gap:9px; margin-right:auto}
-.logo b{font-family:"Gowun Batang",serif; font-weight:700; font-size:17px; letter-spacing:-.01em}
+.logo b{font-family:"Gowun Batang",serif; font-weight:700; font-size:17px; letter-spacing:-.01em; white-space:nowrap}
 .logo span{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.14em; color:var(--ink-3)}
 .pill{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.08em;
       color:var(--ink-2); border:1px solid var(--rule); border-radius:2px;
@@ -83,7 +87,7 @@ button{font:inherit; color:inherit}
 /* ── 히어로 ───────────────────────────────────────────────── */
 .hero{padding:54px 0 40px; border-bottom:1px solid var(--rule)}
 .hero h1{font-family:"Gowun Batang",serif; font-weight:700;
-  font-size:clamp(29px,2.1rem + 1.8vw,50px); line-height:1.24; letter-spacing:-.02em; max-width:20ch}
+  font-size:clamp(26px,1.5rem + 2.6vw,50px); line-height:1.26; letter-spacing:-.02em; max-width:20ch}
 .hero h1 em{font-style:normal; color:var(--accent)}
 .hero .lede{max-width:60ch; color:var(--ink-2); margin-top:18px; font-size:var(--step)}
 .hero-meta{display:flex; flex-wrap:wrap; gap:12px 26px; margin-top:26px; padding-top:20px; border-top:1px solid var(--rule)}
@@ -107,8 +111,9 @@ section{padding:44px 0; border-bottom:1px solid var(--rule)}
 .panel-h .tag{margin-right:auto}
 .panel-b{padding:14px; display:flex; flex-direction:column; gap:12px}
 
-.stage{position:relative; background:repeating-conic-gradient(var(--sunken) 0 25%, transparent 0 50%) 0 0/16px 16px;
+.stage{position:relative; background:var(--surface-2);
   border-radius:2px; overflow:hidden; min-height:320px; display:flex; align-items:center; justify-content:center}
+.stage:not(.empty){background:repeating-conic-gradient(var(--sunken) 0 25%, transparent 0 50%) 0 0/16px 16px}
 .stage canvas{display:block; max-width:100%; height:auto; cursor:crosshair; touch-action:none}
 .stage.empty{border:1px dashed var(--rule-2)}
 .stage.dragover{outline:2px solid var(--accent); outline-offset:-3px}
@@ -247,41 +252,183 @@ footer strong{color:var(--ink-2); font-weight:500}
 .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
 @media (prefers-reduced-motion:reduce){ *{transition-duration:.01ms !important; animation-duration:.01ms !important} }
 .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+/* ── 촬영 가이드 ─────────────────────────────────────────── */
+.guide{display:grid; grid-template-columns:repeat(auto-fit,minmax(212px,1fr)); gap:1px;
+  background:var(--rule); border:1px solid var(--rule); border-radius:3px; margin-bottom:16px}
+.gcard{background:var(--surface); padding:13px 14px 15px; display:flex; flex-direction:column; gap:11px}
+.gcard h3{font-size:14.5px; font-weight:600; letter-spacing:-.01em}
+.gpair{display:grid; grid-template-columns:1fr 1fr; gap:9px}
+.gpair figure{margin:0; display:flex; flex-direction:column; gap:6px}
+.gpair svg{display:block; width:100%; height:auto; background:var(--surface-2); border-radius:2px}
+.gpair figcaption{font-size:11.5px; line-height:1.35; display:flex; align-items:baseline; gap:4px}
+.gpair figcaption b{font-weight:600; font-size:12px}
+.gpair .ok{color:var(--good)}
+.gpair .ok svg{box-shadow:inset 0 0 0 1.5px var(--good)}
+.gpair .no{color:var(--bad)}
+.gpair .no svg{box-shadow:inset 0 0 0 1px var(--rule-2); opacity:.66}
+.tipbar{display:flex; gap:11px; align-items:flex-start; background:var(--good-soft);
+  border:1px solid var(--good); border-radius:3px; padding:11px 14px; font-size:13.5px;
+  color:var(--ink); line-height:1.55; margin-bottom:20px}
+.tipbar svg{flex:none; margin-top:3px; color:var(--good)}
+
+/* ── 접어두는 세부 ───────────────────────────────────────── */
+details.more{border:1px solid var(--rule); border-radius:3px; background:var(--surface)}
+details.more > summary{padding:10px 14px; cursor:pointer; font-size:13.5px; color:var(--ink-2);
+  list-style:none; display:flex; align-items:center; gap:8px}
+details.more > summary::-webkit-details-marker{display:none}
+details.more > summary::before{content:"▸"; font-size:11px; color:var(--ink-3)}
+details.more[open] > summary::before{content:"▾"}
+details.more > summary:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+details.more .inner{padding:0 14px 14px; display:flex; flex-direction:column; gap:12px}
+details.more .charts{margin-top:0; border-radius:2px}
+details.more .tbl-scroll{border:1px solid var(--rule); border-top:1px solid var(--rule); border-radius:2px}
+details.more .method{gap:18px}
 </style>
 
 <div class="mast"><div class="wrap mast-in">
-  <span class="logo"><b>퍼스널컬러 측정실</b><span>CIELAB · ITA°</span></span>
+  <span class="logo"><b>퍼스널컬러 측정실</b><span class="hide-sm">CIELAB · ITA°</span></span>
   <span class="pill hide-sm">D65 · sRGB</span>
   <span class="pill" id="privacy-pill">기기 안에서만 처리</span>
 </div></div>
 
 <header class="hero"><div class="wrap">
   <h1>피부색은 사람마다 다릅니다.<br><em>그래서 재야 합니다.</em></h1>
-  <p class="lede">눈대중으로 “웜톤 같다”고 말하는 대신, 사진에서 피부 화소를 골라내
-  조명을 보정하고 CIELAB 좌표로 환산합니다. 명도 L*, 색상각 h°, 채도 C*, 피부색 분류 지표 ITA°
-  네 값으로 4계절 12타입을 판정하고, 그 사람의 측정값에서 직접 팔레트를 생성합니다.</p>
-  <div class="hero-meta">
-    <div><span class="tag">색공간</span><b>CIE L*a*b* / D65</b></div>
-    <div><span class="tag">분류축</span><b>4</b></div>
-    <div><span class="tag">타입</span><b>12</b></div>
-    <div><span class="tag">전송</span><b>0 byte</b></div>
-  </div>
+  <p class="lede">사진 한 장으로 피부색을 측정해 4계절 12타입을 판정하고,
+  어울리는 색을 뽑아드립니다. 사진은 기기 밖으로 나가지 않습니다.</p>
 </div></header>
 
 <section id="capture"><div class="wrap">
   <div class="shead">
     <span class="snum">01</span>
     <div>
-      <h2>표본 확보</h2>
-      <p>정면·무보정·민낯에 가까울수록 정확합니다. 창가의 낮 간접광이 가장 좋고, 형광등·백열등·필터는 색상각을 통째로 밀어버립니다.
-      흰 종이나 흰 티셔츠가 화면에 같이 찍혀 있으면 화이트밸런스를 훨씬 정확히 잡을 수 있습니다.</p>
+      <h2>사진 준비</h2>
+      <p>조명 하나로 판정이 옆 타입으로 넘어갑니다. 아래 네 가지만 지키면 충분합니다.</p>
     </div>
   </div>
 
-  <div class="bench">
+  <div class="guide">
+    <div class="gcard">
+      <h3>빛</h3>
+      <div class="gpair">
+        <figure class="ok">
+          <svg viewBox="0 0 84 60" aria-hidden="true">
+            <rect x="8" y="11" width="19" height="27" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="17.5" y1="11" x2="17.5" y2="38" stroke="currentColor" stroke-width="1"/>
+            <line x1="8" y1="24.5" x2="27" y2="24.5" stroke="currentColor" stroke-width="1"/>
+            <line x1="31" y1="18" x2="39" y2="20" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            <line x1="31" y1="25" x2="39" y2="25" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            <line x1="31" y1="32" x2="39" y2="30" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            <circle cx="58" cy="24" r="10" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M46 50a12 10 0 0 1 24 0" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          <figcaption><span aria-hidden="true">✓</span><span><b>낮 창가</b><br>커튼에 걸러진 간접광</span></figcaption>
+        </figure>
+        <figure class="no">
+          <svg viewBox="0 0 84 60" aria-hidden="true">
+            <line x1="42" y1="2" x2="42" y2="8" stroke="currentColor" stroke-width="1.4"/>
+            <circle cx="42" cy="14" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="39" y="20" width="6" height="3" fill="currentColor"/>
+            <line x1="31" y1="25" x2="27" y2="31" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            <line x1="53" y1="25" x2="57" y2="31" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            <circle cx="42" cy="39" r="10" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M33 45a10 7 0 0 0 18 0z" fill="currentColor" opacity=".4"/>
+          </svg>
+          <figcaption><span aria-hidden="true">✗</span><span><b>실내 조명</b><br>형광등·백열등·노을</span></figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="gcard">
+      <h3>구도</h3>
+      <div class="gpair">
+        <figure class="ok">
+          <svg viewBox="0 0 84 60" aria-hidden="true">
+            <rect x="14" y="4" width="56" height="52" rx="2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2.5"/>
+            <circle cx="42" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M28 53a14 11 0 0 1 28 0" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          <figcaption><span aria-hidden="true">✓</span><span><b>정면·크게</b><br>얼굴이 화면을 채우게</span></figcaption>
+        </figure>
+        <figure class="no">
+          <svg viewBox="0 0 84 60" aria-hidden="true">
+            <rect x="14" y="4" width="56" height="52" rx="2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2.5"/>
+            <g transform="rotate(-18 34 22)">
+              <circle cx="34" cy="20" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M27 34a7 5.5 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            </g>
+          </svg>
+          <figcaption><span aria-hidden="true">✗</span><span><b>작고 비스듬</b><br>화소가 모자랍니다</span></figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="gcard">
+      <h3>얼굴</h3>
+      <div class="gpair">
+        <figure class="ok">
+          <svg viewBox="0 0 84 60" aria-hidden="true">
+            <circle cx="42" cy="25" r="15" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="36" cy="22" r="1.7" fill="currentColor"/>
+            <circle cx="48" cy="22" r="1.7" fill="currentColor"/>
+            <path d="M37 32a6 3 0 0 0 10 0" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            <path d="M27 54a15 11 0 0 1 30 0" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          <figcaption><span aria-hidden="true">✓</span><span><b>민낯</b><br>머리는 넘겨 이마를</span></figcaption>
+        </figure>
+        <figure class="no">
+          <svg viewBox="0 0 84 60" aria-hidden="true">
+            <circle cx="42" cy="25" r="15" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <ellipse cx="30" cy="29" rx="4.6" ry="3" fill="currentColor" opacity=".5"/>
+            <ellipse cx="54" cy="29" rx="4.6" ry="3" fill="currentColor" opacity=".5"/>
+            <circle cx="36" cy="22" r="1.7" fill="currentColor"/>
+            <circle cx="48" cy="22" r="1.7" fill="currentColor"/>
+            <path d="M37 32a6 3.4 0 0 0 10 0a6 3 0 0 0-10 0" fill="currentColor"/>
+            <path d="M27 54a15 11 0 0 1 30 0" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          <figcaption><span aria-hidden="true">✗</span><span><b>화장</b><br>립·블러셔가 섞입니다</span></figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="gcard">
+      <h3>보정</h3>
+      <div class="gpair">
+        <figure class="ok">
+          <svg viewBox="0 0 84 60" aria-hidden="true">
+            <rect x="16" y="16" width="52" height="34" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M32 16l4-5h12l4 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="42" cy="33" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          <figcaption><span aria-hidden="true">✓</span><span><b>원본 그대로</b><br>기본 카메라로</span></figcaption>
+        </figure>
+        <figure class="no">
+          <svg viewBox="0 0 84 60" aria-hidden="true">
+            <rect x="16" y="16" width="52" height="34" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M32 16l4-5h12l4 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="42" cy="33" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M19 6l1.5 3.4 3.4 1.5-3.4 1.5L19 16l-1.5-3.6-3.4-1.5 3.4-1.5z" fill="currentColor"/>
+            <path d="M69 22l1.2 2.7 2.7 1.2-2.7 1.2L69 30l-1.2-2.9-2.7-1.2 2.7-1.2z" fill="currentColor"/>
+            <path d="M60 48l1 2.2 2.2 1-2.2 1L60 54l-1-2.4-2.2-1 2.2-1z" fill="currentColor"/>
+          </svg>
+          <figcaption><span aria-hidden="true">✗</span><span><b>필터·뷰티모드</b><br>피부색을 바꿔버립니다</span></figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+
+  <div class="tipbar">
+    <svg width="17" height="17" viewBox="0 0 17 17" aria-hidden="true">
+      <path d="M3.5 1.5h7l3 3v11h-10z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M10.5 1.5v3h3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+    </svg>
+    <span><b>흰 종이를 같이 찍으면 가장 정확합니다.</b> A4 용지나 흰 티셔츠가 얼굴 옆에 나오게 찍으세요.
+    그 흰색을 기준 삼아 조명 색을 훨씬 정밀하게 걷어낼 수 있습니다.</span>
+  </div>
+
+  <div>
     <div class="panel">
       <div class="panel-h">
-        <span class="tag">Specimen</span>
+        <span class="tag">사진</span>
         <span class="pill mono" id="dims">—</span>
       </div>
       <div class="panel-b">
@@ -289,7 +436,7 @@ footer strong{color:var(--ink-2); font-weight:500}
           <canvas id="cv" width="640" height="420"></canvas>
           <div class="drop-hint" id="hint">
             <b>사진을 여기에 끌어다 놓으세요</b>
-            <span>또는 아래에서 파일을 고르거나 카메라를 켜세요. 이미지는 브라우저 안에서만 처리되며 어디에도 전송되지 않습니다.</span>
+            <span>또는 아래 버튼으로 사진을 고르세요</span>
           </div>
         </div>
         <div class="btnrow">
@@ -302,10 +449,9 @@ footer strong{color:var(--ink-2); font-weight:500}
       </div>
     </div>
 
-    <div>
-      <div class="panel">
-        <div class="panel-h"><span class="tag">White balance</span></div>
-        <div class="panel-b">
+    <details class="more" style="margin-top:14px">
+      <summary>조명 보정 방식 바꾸기 <span class="tag" style="margin-left:auto">고급</span></summary>
+      <div class="inner">
           <div class="seg" role="group" aria-label="화이트밸런스 방식">
             <button id="wb-auto" aria-pressed="true">자동 보정</button>
             <button id="wb-pick" aria-pressed="false">흰색 지정</button>
@@ -317,9 +463,8 @@ footer strong{color:var(--ink-2); font-weight:500}
             <div class="cell"><span class="tag">R gain</span><span class="v mono" id="gr">1.00</span></div>
             <div class="cell"><span class="tag">B gain</span><span class="v mono" id="gb">1.00</span></div>
           </div>
-        </div>
       </div>
-    </div>
+    </details>
   </div>
 </div></section>
 
@@ -327,16 +472,15 @@ footer strong{color:var(--ink-2); font-weight:500}
   <div class="shead">
     <span class="snum">02</span>
     <div>
-      <h2>피부 화소 채취</h2>
-      <p>자동 검출은 YCbCr·HSV 규칙으로 피부 화소를 골라낸 뒤 반사광(하이라이트)과 그림자를 잘라내고 중앙값을 씁니다.
-      더 정확하게 하려면 <b>이마·양 볼·턱</b>을 직접 찍으세요. <b>머리카락</b>과 <b>눈동자</b>까지 찍으면 명도 대비를 계산해
-      계절 안의 세부 타입(라이트·브라이트·뮤트·딥)까지 갈라낼 수 있습니다.</p>
+      <h2>색 채취</h2>
+      <p>사진을 넣으면 피부를 자동으로 찾습니다. 더 정확하게 하려면 <b>이마·양 볼</b>을 직접 누르세요.
+      <b>머리카락</b>과 <b>눈동자</b>까지 누르면 세부 타입까지 갈립니다.</p>
     </div>
   </div>
 
   <div class="bench">
     <div class="panel">
-      <div class="panel-h"><span class="tag">Sampling</span><span class="pill mono" id="px-count">피부 화소 0</span></div>
+      <div class="panel-h"><span class="tag">채취</span><span class="pill mono" id="px-count">피부 화소 0</span></div>
       <div class="panel-b">
         <div class="seg" role="group" aria-label="채취 대상">
           <button id="m-skin" aria-pressed="true"><i class="swatch-dot" style="background:#C89A72"></i>피부</button>
@@ -354,12 +498,16 @@ footer strong{color:var(--ink-2); font-weight:500}
     </div>
 
     <div class="panel">
-      <div class="panel-h"><span class="tag">Readout</span></div>
+      <div class="panel-h"><span class="tag">측정 결과</span></div>
       <div class="panel-b">
         <div class="chip">
           <i id="sk-chip" style="background:var(--sunken)"></i>
           <div><div class="tag">측정된 피부색</div><div class="mono" id="sk-hex">—</div></div>
         </div>
+        <button class="btn primary" id="btn-run" disabled style="justify-content:center">퍼스널 컬러 판정하기</button>
+        <details class="more">
+          <summary>계측값 자세히</summary>
+          <div class="inner">
         <div class="readout">
           <div class="cell"><span class="tag">L* 명도</span><span class="v mono" id="v-L">—</span></div>
           <div class="cell"><span class="tag">ITA° 피부심도</span><span class="v mono" id="v-ita">—</span></div>
@@ -369,7 +517,8 @@ footer strong{color:var(--ink-2); font-weight:500}
           <div class="cell"><span class="tag">b* 황색(멜라닌)</span><span class="v mono" id="v-b">—</span></div>
           <div class="cell wide"><span class="tag">명도 대비 (피부 − 머리카락)</span><span class="v mono" id="v-ct">—</span><span class="u" id="v-ct-src">머리카락 미채취</span></div>
         </div>
-        <button class="btn primary" id="btn-run" disabled style="justify-content:center">퍼스널 컬러 판정하기</button>
+          </div>
+        </details>
       </div>
     </div>
   </div>
@@ -378,7 +527,7 @@ footer strong{color:var(--ink-2); font-weight:500}
 <section id="result" hidden><div class="wrap">
   <div class="shead">
     <span class="snum">03</span>
-    <div><h2>판정</h2><p>세 축의 측정값이 12타입 중 하나로 수렴한 결과입니다. 아래 지표를 눌러 근거를 직접 확인할 수 있습니다.</p></div>
+    <div><h2>판정</h2><p>측정값이 12타입 중 하나로 수렴한 결과입니다.</p></div>
   </div>
 
   <div class="verdict">
@@ -398,6 +547,9 @@ footer strong{color:var(--ink-2); font-weight:500}
     </div>
   </div>
 
+  <details class="more" style="margin-top:26px">
+    <summary>판정 근거 — 지표 4종과 측정값</summary>
+    <div class="inner">
   <div class="charts" id="charts">
     <div class="chart">
       <div class="chart-h"><span class="tag">계절 좌표</span><span class="rv mono" id="rv-map">—</span></div>
@@ -421,20 +573,18 @@ footer strong{color:var(--ink-2); font-weight:500}
     </div>
   </div>
 
-  <details class="table-view">
-    <summary>측정값 표로 보기</summary>
-    <div class="tbl-scroll"><table>
+  <div class="tbl-scroll"><table>
       <thead><tr><th>지표</th><th>값</th><th>단위 / 범위</th><th>해석</th></tr></thead>
       <tbody id="tbl-body"></tbody>
     </table></div>
+    </div>
   </details>
 </div></section>
 
 <section id="palette"><div class="wrap">
   <div class="shead">
     <span class="snum">04</span>
-    <div><h2>팔레트</h2><p>일반적인 시즌 색표를 그대로 보여주는 대신, 판정된 타입의 명도·채도 시그니처를 12개 색상환에 적용해
-    <b>측정값에서 직접 생성</b>한 색들입니다. 색을 누르면 색상 코드가 복사되고, 아래 드레이프에 적용됩니다.</p></div>
+    <div><h2>팔레트</h2><p>고정 색표가 아니라 <b>당신의 측정값에서 생성한</b> 색입니다. 누르면 색상 코드가 복사되고 아래 드레이프에 적용됩니다.</p></div>
   </div>
   <div class="tag" style="margin-bottom:9px">Best — 얼굴을 밝히는 색</div>
   <div class="pal-grid" id="pal-best"></div>
@@ -454,8 +604,7 @@ footer strong{color:var(--ink-2); font-weight:500}
 <section id="drape-sec"><div class="wrap">
   <div class="shead">
     <span class="snum">05</span>
-    <div><h2>드레이핑</h2><p>실제 진단실에서 천을 목 밑에 대보는 그 과정입니다. 색을 바꿔가며 얼굴의 그늘, 팔자주름, 다크서클,
-    입술 혈색이 어떻게 달라지는지 보세요. 베스트 색에서는 얼굴이 또렷해지고, 워스트 색에서는 노랗게 뜨거나 칙칙해집니다.</p></div>
+    <div><h2>드레이핑</h2><p>진단실에서 천을 목 밑에 대보는 그 과정입니다. 색을 바꿔가며 얼굴의 그늘과 혈색이 어떻게 달라지는지 보세요.</p></div>
   </div>
   <div class="drape">
     <div class="drape-stage"><canvas id="drape-cv" width="800" height="500"></canvas></div>
@@ -474,8 +623,9 @@ footer strong{color:var(--ink-2); font-weight:500}
 </div></section>
 
 <section id="method"><div class="wrap">
-  <div class="shead"><span class="snum">06</span><div><h2>계산 방식</h2>
-  <p>추측을 줄이려고 각 단계를 공개합니다. 값이 이상하면 어느 단계에서 어긋났는지 되짚을 수 있습니다.</p></div></div>
+  <details class="more">
+    <summary>계산 방식 — 6단계 전부 공개</summary>
+    <div class="inner">
   <div class="method">
     <div><span class="step-n">STEP 1</span><h3>광원 상쇄</h3>
       <p>선형 RGB에서 채널별 <code>(mean cⁿ)^(1/n)</code>, n=6을 구해 회색이 회색이 되도록 이득을 곱합니다.
@@ -496,6 +646,8 @@ footer strong{color:var(--ink-2); font-weight:500}
       <p>타입의 <code>(L*, C*, 색상 편향)</code> 시그니처를 12개 기준 색상에 적용하고, sRGB 밖으로 나가면
       채도를 0.5씩 낮춰 색역 안으로 넣습니다. 그래서 팔레트가 서로 어긋나지 않습니다.</p></div>
   </div>
+    </div>
+  </details>
 </div></section>
 
 <footer><div class="wrap">
