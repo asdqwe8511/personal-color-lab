@@ -1,0 +1,401 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>얼굴형 측정실</title>
+<meta name="description" content="사진에서 얼굴 랜드마크 468점을 잡아 얼굴형과 이목구비 비율을 계산하고, 그에 맞는 헤어스타일을 추천합니다. 사진은 브라우저 안에서만 처리됩니다.">
+<meta name="theme-color" content="#E6E6E8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161618" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="퍼스널컬러 측정실">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="얼굴형 측정실">
+<meta property="og:description" content="얼굴 랜드마크 468점으로 얼굴형과 이목구비 비율을 재고, 그에 맞는 헤어스타일을 추천합니다.">
+<meta property="og:url" content="https://asdqwe8511.github.io/personal-color-lab/face.html">
+<meta property="og:image" content="https://asdqwe8511.github.io/personal-color-lab/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.nav{display:flex; gap:2px; margin-right:auto; margin-left:18px}
+.nav a{font-size:13px; color:var(--ink-2); text-decoration:none; padding:5px 10px; border-radius:2px; white-space:nowrap}
+.nav a:hover{background:var(--surface-2); color:var(--ink)}
+.nav a[aria-current="page"]{background:var(--accent-soft); color:var(--ink); font-weight:500}
+@media(max-width:620px){ .nav{margin-left:8px} .nav a{padding:5px 7px; font-size:12px} }
+
+.shape-name{font-family:"Gowun Batang",serif; font-weight:700; letter-spacing:-.025em;
+  font-size:clamp(32px,2rem + 2.6vw,56px); line-height:1.12}
+.bars{display:flex; flex-direction:column; gap:7px}
+.bar{display:grid; grid-template-columns:76px 1fr 44px; align-items:center; gap:10px; font-size:12.5px}
+.bar .track{height:9px; background:var(--sunken); border-radius:2px; overflow:hidden}
+.bar .fill{display:block; height:100%; background:var(--ink-3); border-radius:2px}
+.bar.top .fill{background:var(--accent)}
+.bar.top{font-weight:600}
+.bar .num{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink-3); text-align:right}
+.reco{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:3px}
+@media(max-width:600px){ .reco{grid-template-columns:1fr} }
+.reco > div{background:var(--surface); padding:13px 15px}
+.reco ul{margin:8px 0 0; padding-left:18px; display:flex; flex-direction:column; gap:6px}
+.reco li{font-size:13.5px; line-height:1.5; color:var(--ink-2)}
+.reco .good .tag{color:var(--good)}
+.reco .bad .tag{color:var(--bad)}
+.combo{border:1px solid var(--accent); border-radius:3px; background:var(--accent-soft); padding:14px 16px; margin-top:20px}
+.combo h3{font-family:"Gowun Batang",serif; font-weight:700; font-size:16px; margin-bottom:8px}
+.combo p{font-size:13.5px; color:var(--ink-2); line-height:1.6}
+.combo .row{display:flex; flex-wrap:wrap; gap:8px; margin-top:11px}
+.combo .row i{width:34px; height:34px; border-radius:2px; border:1px solid var(--rule-2); display:block}
+.status{font-size:13px; color:var(--ink-2); display:flex; align-items:center; gap:9px}
+.spin{width:13px; height:13px; border:2px solid var(--rule-2); border-top-color:var(--accent);
+  border-radius:50%; animation:sp .7s linear infinite; flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){ .spin{animation:none} }
+</style>
+
+<div class="mast"><div class="wrap mast-in">
+  <span class="logo"><b>측정실</b></span>
+  <nav class="nav">
+    <a href="index.html">퍼스널 컬러</a>
+    <a href="face.html" aria-current="page">얼굴형</a>
+  </nav>
+  <span class="pill" id="privacy-pill">기기 안에서만 처리</span>
+</div></div>
+
+<header class="hero"><div class="wrap">
+  <h1>얼굴은 재는 것이지<br><em>점수 매기는 게 아닙니다.</em></h1>
+  <p class="lede">사진에서 얼굴 윤곽 468점을 잡아 얼굴형과 이목구비 비율을 계산하고,
+  그 비율에 잘 맞는 헤어스타일을 알려드립니다. 사진은 기기 밖으로 나가지 않습니다.</p>
+</div></header>
+
+<section id="capture"><div class="wrap">
+  <div class="shead">
+    <span class="snum">01</span>
+    <div>
+      <h2>사진 준비</h2>
+      <p>정면을 보고, 머리는 넘겨 이마와 턱선이 보이게 찍으세요. 고개가 기울면 얼굴 폭이 잘못 측정됩니다.</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-h"><span class="tag">사진</span><span class="pill mono" id="dims">—</span></div>
+    <div class="panel-b">
+      <div class="stage empty" id="stage">
+        <canvas id="cv" width="640" height="440"></canvas>
+        <div class="drop-hint" id="hint">
+          <b>사진을 여기에 끌어다 놓으세요</b>
+          <span>또는 아래 버튼으로 사진을 고르세요</span>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" id="btn-file">사진 불러오기</button>
+        <button class="btn" id="btn-cam">카메라 켜기</button>
+        <button class="btn" id="btn-shot" hidden>촬영</button>
+        <button class="btn on" id="btn-mesh">윤곽선 보기</button>
+        <button class="btn" id="btn-demo">예시로 둘러보기</button>
+        <input type="file" id="file" accept="image/*" class="sr">
+      </div>
+      <div class="status" id="status"><span class="spin"></span><span>얼굴 인식 모델을 불러오는 중…</span></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="result" hidden><div class="wrap">
+  <div class="shead">
+    <span class="snum">02</span>
+    <div><h2>얼굴형</h2><p>윤곽 비율로 계산한 결과입니다.</p></div>
+  </div>
+
+  <div class="verdict">
+    <div>
+      <div class="shape-name" id="r-name">—</div>
+      <div class="verdict-en mono" id="r-en">—</div>
+      <div class="season-rule" style="background:var(--accent)"></div>
+      <p class="verdict-desc" id="r-desc"></p>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><span class="tag">형태 점수</span></div>
+      <div class="panel-b"><div class="bars" id="bars"></div>
+      <p class="note" id="margin-note"></p></div>
+    </div>
+  </div>
+
+  <div class="reco" style="margin-top:26px">
+    <div class="good"><span class="tag">잘 받는 스타일</span><ul id="reco-good"></ul></div>
+    <div class="bad"><span class="tag">덜 어울리는 스타일</span><ul id="reco-bad"></ul></div>
+  </div>
+
+  <div class="combo" id="combo" hidden>
+    <h3>퍼스널 컬러와 합치면</h3>
+    <p id="combo-text"></p>
+    <div class="row" id="combo-row"></div>
+  </div>
+
+  <details class="more" style="margin-top:26px">
+    <summary>이목구비 비율 자세히</summary>
+    <div class="inner">
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>항목</th><th>측정값</th><th>해석</th></tr></thead>
+        <tbody id="prop-body"></tbody>
+      </table></div>
+      <p class="note">삼정은 이마·중안부·하안부의 세로 비율로 1:1:1이 기준입니다.
+      오분법은 얼굴 폭이 눈 길이의 5배일 때 균형으로 봅니다. 어디까지나 관습적 기준이며,
+      벗어난다고 문제가 있다는 뜻이 아닙니다 — 어떤 스타일이 잘 받는지 계산하기 위한 좌표일 뿐입니다.</p>
+    </div>
+  </details>
+</div></section>
+
+<footer><div class="wrap">
+  <p><strong>이 측정의 한계.</strong> 얼굴형 분류는 의학적 기준이 아니라 미용업계의 관습적 분류이고,
+  경계는 연속적입니다. 고개 각도·렌즈 왜곡·앞머리에 따라 결과가 바뀝니다. 두 가지 형태의 점수가
+  비슷하게 나오면 둘 다 참고하세요 — 실제로 그 중간인 경우가 많습니다.</p>
+  <p style="margin-top:12px"><strong>기록에 대해.</strong> 사진과 랜드마크는 브라우저 메모리에서만 처리되며
+  서버로 전송되지 않습니다. 얼굴 인식 모델 파일만 외부에서 내려받습니다.</p>
+</div></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+import { OVAL, P, measure, classify, proportions, SHAPES } from "./assets/face.js";
+
+const $ = id => document.getElementById(id);
+const cv = $("cv"), ctx = cv.getContext("2d", { willReadFrequently: true });
+const S = { img: null, w: 0, h: 0, lm: null, mesh: true, stream: null, landmarker: null };
+
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2100); }
+function status(html, spinning){
+  $("status").innerHTML = (spinning ? '<span class="spin"></span>' : '') + "<span>" + html + "</span>";
+}
+
+/* ── 모델 적재 ───────────────────────────────────────────────── */
+const CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18";
+async function loadModel(){
+  try{
+    const { FaceLandmarker, FilesetResolver } = await import(CDN + "/vision_bundle.mjs");
+    const fs = await FilesetResolver.forVisionTasks(CDN + "/wasm");
+    S.landmarker = await FaceLandmarker.createFromOptions(fs, {
+      baseOptions:{ modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task" },
+      runningMode:"IMAGE", numFaces:1
+    });
+    status("얼굴 인식 준비됨 — 사진을 넣으세요", false);
+    return true;
+  }catch(e){
+    status("얼굴 인식 모델을 불러오지 못했습니다. 네트워크를 확인하고 새로고침하세요.", false);
+    console.error(e);
+    return false;
+  }
+}
+const modelReady = loadModel();
+
+/* ── 이미지 ──────────────────────────────────────────────────── */
+function setImage(im){
+  const MAX = 760, sc = Math.min(1, MAX / Math.max(im.width, im.height));
+  S.w = Math.round(im.width * sc); S.h = Math.round(im.height * sc);
+  cv.width = S.w; cv.height = S.h;
+  ctx.drawImage(im, 0, 0, S.w, S.h);
+  S.img = im;
+  $("hint").style.display = "none";
+  $("stage").classList.remove("empty");
+  $("dims").textContent = S.w + " × " + S.h + " px";
+  detect();
+}
+function loadFile(f){
+  if(!f || !/^image\//.test(f.type)){ toast("이미지 파일만 받습니다."); return; }
+  const rd = new FileReader();
+  rd.onload = () => { const im = new Image(); im.onload = () => { stopCam(); setImage(im); }; im.src = rd.result; };
+  rd.readAsDataURL(f);
+}
+
+/* ── 검출 ────────────────────────────────────────────────────── */
+async function detect(){
+  if(!await modelReady || !S.landmarker){ toast("모델이 아직 준비되지 않았습니다."); return; }
+  status("얼굴을 찾는 중…", true);
+  let res;
+  try{ res = S.landmarker.detect(cv); }
+  catch(e){ status("검출에 실패했습니다.", false); console.error(e); return; }
+  if(!res.faceLandmarks || !res.faceLandmarks.length){
+    status("얼굴을 찾지 못했습니다. 정면으로 크게 나온 사진을 쓰세요.", false);
+    $("result").hidden = true; S.lm = null; draw(); return;
+  }
+  // 정규화 좌표를 화면 픽셀로
+  S.lm = res.faceLandmarks[0].map(p => ({ x: p.x * S.w, y: p.y * S.h }));
+  status("얼굴 468점 인식됨", false);
+  draw();
+  render();
+}
+
+function draw(){
+  ctx.clearRect(0,0,S.w,S.h);
+  if(S.img) ctx.drawImage(S.img, 0, 0, S.w, S.h);
+  if(!S.lm || !S.mesh) return;
+  const css = getComputedStyle(document.documentElement);
+  const accent = css.getPropertyValue("--accent").trim() || "#2F615C";
+  // 얼굴 윤곽
+  ctx.beginPath();
+  OVAL.forEach((idx,i) => { const p = S.lm[idx]; i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y); });
+  ctx.closePath();
+  ctx.strokeStyle = "rgba(0,0,0,.75)"; ctx.lineWidth = 3.5; ctx.stroke();
+  ctx.strokeStyle = accent; ctx.lineWidth = 1.8; ctx.stroke();
+  // 계측선 3본
+  const seg = (a,b) => { ctx.beginPath(); ctx.moveTo(S.lm[a].x,S.lm[a].y); ctx.lineTo(S.lm[b].x,S.lm[b].y);
+    ctx.strokeStyle="rgba(0,0,0,.7)"; ctx.lineWidth=3; ctx.stroke();
+    ctx.strokeStyle="#00E5FF"; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]); };
+  seg(P.foreL, P.foreR); seg(P.cheekL, P.cheekR); seg(P.jawL, P.jawR); seg(P.top, P.chin);
+}
+
+/* ── 결과 ────────────────────────────────────────────────────── */
+function render(){
+  const m = measure(S.lm), c = classify(m), T = SHAPES[c.key];
+  $("result").hidden = false;
+  $("r-name").textContent = T.ko;
+  $("r-en").textContent = T.en + "  ·  얼굴 길이/폭 " + m.ratioLW.toFixed(2);
+  $("r-desc").textContent = T.desc;
+
+  const vals = Object.entries(c.scores).sort((a,b)=>b[1]-a[1]);
+  const lo = Math.min(...vals.map(v=>v[1])), hi = Math.max(...vals.map(v=>v[1]));
+  $("bars").innerHTML = vals.map(([k,v],i) =>
+    '<div class="bar' + (i===0?' top':'') + '"><span>' + SHAPES[k].ko + '</span>' +
+    '<span class="track"><i class="fill" style="width:' +
+    (((v-lo)/((hi-lo)||1))*100).toFixed(0) + '%"></i></span>' +
+    '<span class="num">' + v.toFixed(2) + '</span></div>').join("");
+  $("margin-note").textContent = c.margin < 0.12
+    ? SHAPES[c.key].ko + "과 " + SHAPES[c.second].ko + "의 점수가 거의 같습니다. 두 쪽 추천을 모두 참고하세요."
+    : "1·2위 차이가 뚜렷해 " + T.ko + "으로 볼 수 있습니다.";
+
+  $("reco-good").innerHTML = T.good.map(x=>"<li>"+x+"</li>").join("");
+  $("reco-bad").innerHTML = T.avoid.map(x=>"<li>"+x+"</li>").join("");
+  $("prop-body").innerHTML = proportions(m).map(r =>
+    "<tr><td>"+r.key+'</td><td class="num">'+r.value+"</td><td>"+r.note+"</td></tr>").join("");
+
+  // 퍼스널 컬러 결과가 있으면 합쳐서 보여준다
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem("pc-result") || "null"); }catch(e){}
+  if(saved && saved.ko){
+    $("combo").hidden = false;
+    $("combo-text").textContent =
+      "퍼스널 컬러는 " + saved.ko + ", 얼굴형은 " + T.ko + "입니다. " +
+      T.good[0] + "에 아래 헤어 컬러를 얹으면 형태와 색이 같은 방향으로 맞습니다.";
+    $("combo-row").innerHTML = (saved.hair||[]).map(h =>
+      '<i style="background:'+h.hex+'" title="'+h.name+'"></i>').join("");
+  }
+  $("result").scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+/* ── 예시 표본 (합성) ────────────────────────────────────────
+ * 사진 없이 결과 화면을 확인할 수 있게 한다. 얼굴을 타원으로 모형화해
+ * 계측에 쓰는 점만 채우므로, 실제 검출과 같은 render() 경로를 탄다. */
+function demoFace(){
+  const W = 520, H = 660;
+  cv.width = W; cv.height = H; S.w = W; S.h = H;
+  const profiles = [
+    { L:1.46, F:0.85, J:0.75 }, { L:1.18, F:0.84, J:0.83 },
+    { L:1.30, F:0.90, J:0.92 }, { L:1.72, F:0.86, J:0.79 },
+    { L:1.43, F:0.94, J:0.64 }, { L:1.52, F:0.76, J:0.70 }
+  ];
+  const q = profiles[Math.floor(Math.random() * profiles.length)];
+  const halfW = 112, faceH = q.L * halfW * 2;
+  const cx = W / 2, top = (H - faceH) / 2;
+
+  /* 계측에 쓰는 8개 점을 앵커로 두고, 그 사이를 캐트멀-롬 스플라인으로 채운다.
+     세로 위치만으로 폭을 정하면 정수리 부근에 점이 하나뿐이라 각이 진다. */
+  const A = [
+    [0, 0], [q.F, 0.222], [1.0, 0.444], [q.J, 0.667],
+    [0, 1], [-q.J, 0.667], [-1.0, 0.444], [-q.F, 0.222]
+  ].map(([w, v]) => ({ x: w * halfW, y: v * faceH }));
+  const K = [0, 4, 8, 12, 18, 24, 28, 32, 36];
+  function ring(k){
+    let i = 0; while (k >= K[i + 1]) i++;
+    const t = (k - K[i]) / (K[i + 1] - K[i]);
+    const at = j => A[((j % 8) + 8) % 8];
+    const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+    const f = (a0, a1, a2, a3) => 0.5 * ((2 * a1) + (-a0 + a2) * t +
+      (2 * a0 - 5 * a1 + 4 * a2 - a3) * t * t +
+      (-a0 + 3 * a1 - 3 * a2 + a3) * t * t * t);
+    return { x: f(p0.x, p1.x, p2.x, p3.x), y: f(p0.y, p1.y, p2.y, p3.y) };
+  }
+
+  const lm = Array.from({ length: 478 }, () => ({ x: cx, y: top }));
+  const set = (i, dx, dy) => lm[i] = { x: cx + dx, y: top + dy };
+  OVAL.forEach((idx, k) => { const pt = ring(k); set(idx, pt.x, pt.y); });
+  set(P.browL, -0.42 * halfW, 0.24 * faceH); set(P.browR, 0.42 * halfW, 0.24 * faceH);
+  set(P.noseBase, 0, 0.62 * faceH);
+  set(P.eyeLo, -0.54 * halfW, 0.35 * faceH); set(P.eyeLi, -0.18 * halfW, 0.35 * faceH);
+  set(P.eyeRi, 0.18 * halfW, 0.35 * faceH);  set(P.eyeRo, 0.54 * halfW, 0.35 * faceH);
+  set(P.mouthL, -0.26 * halfW, 0.79 * faceH); set(P.mouthR, 0.26 * halfW, 0.79 * faceH);
+
+  // 합성임이 드러나도록 무채색 실루엣으로만 그린다
+  const g = ctx;
+  g.fillStyle = "#DCDCDF"; g.fillRect(0, 0, W, H);
+  g.beginPath();
+  OVAL.forEach((idx, i) => { const pt = lm[idx]; i ? g.lineTo(pt.x, pt.y) : g.moveTo(pt.x, pt.y); });
+  g.closePath(); g.fillStyle = "#B6B6BC"; g.fill();
+  [[P.eyeLo, P.eyeLi], [P.eyeRi, P.eyeRo]].forEach(([a, b]) => {
+    g.beginPath();
+    g.ellipse((lm[a].x + lm[b].x) / 2, lm[a].y, Math.abs(lm[a].x - lm[b].x) / 2, 8, 0, 0, 6.284);
+    g.fillStyle = "#6E6E76"; g.fill();
+  });
+  [[P.browL, P.browR]].forEach(([a, b]) => {
+    g.beginPath(); g.lineWidth = 5; g.lineCap = "round";
+    g.moveTo(lm[a].x - 16, lm[a].y); g.lineTo(lm[a].x + 16, lm[a].y - 3);
+    g.moveTo(lm[b].x - 16, lm[b].y - 3); g.lineTo(lm[b].x + 16, lm[b].y);
+    g.strokeStyle = "#6E6E76"; g.stroke();
+  });
+  g.beginPath();
+  g.ellipse(cx, lm[P.mouthL].y, Math.abs(lm[P.mouthL].x - lm[P.mouthR].x) / 2, 9, 0, 0, 6.284);
+  g.fillStyle = "#8A8A92"; g.fill();
+
+  const snap = document.createElement("canvas");
+  snap.width = W; snap.height = H; snap.getContext("2d").drawImage(cv, 0, 0);
+  const im = new Image();
+  im.onload = () => { S.img = im; S.lm = lm; draw(); render(); };
+  im.src = snap.toDataURL();
+
+  $("hint").style.display = "none"; $("stage").classList.remove("empty");
+  $("dims").textContent = W + " × " + H + " px";
+  status("합성 표본 — 실제 진단은 본인 사진으로 하세요", false);
+}
+
+/* ── 이벤트 ──────────────────────────────────────────────────── */
+$("btn-demo").onclick = () => { stopCam(); demoFace(); };
+$("btn-file").onclick = () => $("file").click();
+$("file").onchange = e => loadFile(e.target.files && e.target.files[0]);
+const stage = $("stage");
+["dragenter","dragover"].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); stage.classList.add("dragover"); }));
+["dragleave","drop"].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); stage.classList.remove("dragover"); }));
+stage.addEventListener("drop", e => loadFile(e.dataTransfer.files && e.dataTransfer.files[0]));
+
+$("btn-mesh").onclick = function(){ S.mesh = !S.mesh; this.classList.toggle("on", S.mesh);
+  this.textContent = S.mesh ? "윤곽선 보기" : "윤곽선 숨김"; draw(); };
+
+let video = null;
+function stopCam(){ if(S.stream){ S.stream.getTracks().forEach(t=>t.stop()); S.stream=null; }
+  $("btn-shot").hidden = true; $("btn-cam").textContent = "카메라 켜기"; }
+$("btn-cam").onclick = function(){
+  if(S.stream){ stopCam(); return; }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    toast("이 환경에서는 카메라를 쓸 수 없습니다."); return; }
+  navigator.mediaDevices.getUserMedia({ video:{ width:{ideal:1280}, facingMode:"user" }, audio:false })
+    .then(st => {
+      S.stream = st; video = document.createElement("video");
+      video.playsInline = true; video.muted = true; video.srcObject = st;
+      video.onloadedmetadata = () => {
+        video.play(); $("btn-shot").hidden = false; $("btn-cam").textContent = "카메라 끄기";
+        $("hint").style.display = "none"; stage.classList.remove("empty");
+        const MAX=760, sc=Math.min(1, MAX/Math.max(video.videoWidth, video.videoHeight));
+        cv.width = Math.round(video.videoWidth*sc); cv.height = Math.round(video.videoHeight*sc);
+        (function loop(){ if(!S.stream) return; ctx.drawImage(video,0,0,cv.width,cv.height);
+          requestAnimationFrame(loop); })();
+      };
+    })
+    .catch(err => {
+      const n = err && err.name;
+      toast(n==="NotAllowedError"||n==="SecurityError" ? "카메라가 차단됐습니다. 사진을 불러오세요."
+        : n==="NotFoundError" ? "연결된 카메라를 찾지 못했습니다." : "카메라를 열 수 없습니다.");
+    });
+};
+$("btn-shot").onclick = () => {
+  if(!video) return;
+  const snap = document.createElement("canvas");
+  snap.width = cv.width; snap.height = cv.height;
+  snap.getContext("2d").drawImage(video, 0, 0, snap.width, snap.height);
+  const im = new Image(); im.onload = () => { stopCam(); setImage(im); }; im.src = snap.toDataURL("image/png");
+};
+</script>
