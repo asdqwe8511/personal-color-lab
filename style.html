@@ -314,10 +314,41 @@ function render(){
   const dressOptAI = { neckline: N.good[0], bodyKey: body.key, m: body.m || {},
                        bottom: BOTTOM_TYPE[body.key], gender: body.system === "men" ? "men" : "women" };
 
+  /* 준비된 이미지 파일이 있으면 그것을 쓰고, 없을 때만 생성한다.
+     생성은 일일 한도가 있어서 트래픽이 붙으면 막힌다. 미리 만들어 둔
+     파일이 있으면 한도를 쓰지 않고 즉시 표시된다.
+       img/{계절}-{체형}-{n}.jpg  →  img/{계절}-{n}.jpg  →  AI 생성 */
+  function tryFiles(paths) {
+    return new Promise(resolve => {
+      let i = 0;
+      const next = () => {
+        if (i >= paths.length) return resolve(null);
+        const url = paths[i++];
+        const im = new Image();
+        im.onload = () => resolve(url);
+        im.onerror = next;
+        im.src = url;
+      };
+      next();
+    });
+  }
+
   (async () => {
     for (let i = 0; i < OUTFITS.length; i++) {
       const box = document.querySelector('.shot[data-i="' + i + '"]');
       if (!box) continue;
+      const n = i + 1;
+      const local = await tryFiles([
+        "img/" + season + "-" + body.key + "-" + n + ".jpg",
+        "img/" + season + "-" + n + ".jpg",
+        "img/outfit-" + n + ".jpg"
+      ]);
+      if (local) {
+        box.innerHTML = '<img alt="' + OUTFITS[i].name + ' 착장 예시" src="' + local + '">';
+        box.querySelector("img").dataset.cap = OUTFITS[i].name + " — " +
+          OUTFITS[i].items.map(it => it.role + " " + it.c.name).join(" · ");
+        continue;
+      }
       try {
         const r = await fetch(WORKER, { method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ provider: "workers-ai",
@@ -328,7 +359,7 @@ function render(){
         box.querySelector("img").dataset.cap = OUTFITS[i].name + " — " +
           OUTFITS[i].items.map(it => it.role + " " + it.c.name).join(" · ");
       } catch (e) {
-        box.innerHTML = '<div class="ph">이미지를 불러오지 못했습니다</div>';
+        box.innerHTML = '<div class="ph">이미지 준비 중</div>';
       }
     }
   })();
