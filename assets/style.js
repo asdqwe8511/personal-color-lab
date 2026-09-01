@@ -225,15 +225,21 @@ function outfitPrompt(outfit, opt) {
   if (EN_BODY[opt.bodyKey]) body.push(EN_BODY[opt.bodyKey]);
 
   return [
-    "editorial full-body fashion photograph, single Korean " + who + ", front view",
-    "standing straight, arms relaxed away from the body so the waistline is visible",
+    "editorial full-body fashion lookbook photograph, single Korean " + who,
+    /* 자세가 흐트러지면 실루엣 비교가 안 된다 — 정면·대칭·직립을 명시 */
+    "standing perfectly upright and symmetrical, facing the camera straight on",
+    "shoulders level, hips level, weight evenly on both feet, feet together and flat on the floor",
+    "no contrapposto, body not turned or tilted, head straight and level",
+    "arms hanging relaxed slightly away from the torso so the waistline is visible",
+    /* 머리끝부터 신발까지 다 들어와야 한다 */
+    "full length shot, entire body from the top of the head to the shoes fully inside the frame",
+    "generous empty space above the head and below the shoes, nothing cropped",
     "BODY: " + body.join(", "),
     "TOP: " + top.toUpperCase() + " colored fine-knit top, " + top + " hue, " +
       neck + ", hem ending at the high hip",
     "BOTTOM: " + bot.toUpperCase() + " " + bottom + ", full length",
     "plain pale grey seamless backdrop, soft even studio lighting",
-    "natural realistic proportions, full body visible from head to shoes",
-    "sharp focus, no text, no logo"
+    "natural realistic proportions, sharp focus, no text, no logo, no cropping"
   ].join(". ");
 }
 
