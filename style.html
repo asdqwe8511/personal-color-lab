@@ -17,6 +17,15 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap">
 <link rel="stylesheet" href="assets/app.css">
 <style>
+.keyline{border:1px solid var(--accent); background:var(--accent-soft); border-radius:3px;
+  padding:20px 22px; margin-bottom:20px}
+.keyline .tag{display:block; margin-bottom:8px}
+.keyline h3{font-family:"Gowun Batang",serif; font-weight:700; letter-spacing:-.02em;
+  font-size:clamp(20px,1.2rem + 1.4vw,30px); line-height:1.35}
+.keyline p{font-size:14px; color:var(--ink-2); line-height:1.65; margin-top:10px}
+.keyline .kw{display:flex; flex-wrap:wrap; gap:7px; margin-top:14px}
+.keyline .kw span{font-size:13px; background:var(--surface); border:1px solid var(--rule-2);
+  border-radius:2px; padding:5px 11px}
 .axes{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:1px;
   background:var(--rule); border:1px solid var(--rule); border-radius:3px; margin-bottom:24px}
 .ax{background:var(--surface); padding:13px 15px}
@@ -115,10 +124,9 @@
 <div class="mast"><div class="wrap mast-in">
   <span class="logo"><b>측정실</b></span>
   <nav class="nav">
-    <a href="index.html">퍼스널 컬러</a>
-    <a href="face.html">얼굴형</a>
-    <a href="body.html">체형</a>
-    <a href="style.html" aria-current="page">의류</a>
+    <a href="index.html">1 · 얼굴</a>
+    <a href="body.html">2 · 체형</a>
+    <a href="style.html" aria-current="page">3 · 의류</a>
   </nav>
 </div></div>
 
@@ -133,6 +141,7 @@
     <span class="snum">01</span>
     <div><h2>측정 결과</h2><p>세 축이 모두 있어야 처방이 완성됩니다. 빠진 것은 링크에서 측정하세요.</p></div>
   </div>
+  <div class="keyline" id="keyline" hidden></div>
   <div class="axes" id="axes"></div>
   <div class="tipbar" id="need" hidden>
     <svg width="17" height="17" viewBox="0 0 17 17" aria-hidden="true">
@@ -240,8 +249,8 @@ const color = load("pc-result"), face = load("face-result"), body = load("body-r
 
 /* ── 01 측정 현황 ────────────────────────────────────────────── */
 const AX = [
-  { key:"퍼스널 컬러", v:color, href:"index.html", label:"퍼스널 컬러 측정하기" },
-  { key:"얼굴형",      v:face,  href:"face.html",  label:"얼굴형 측정하기" },
+  { key:"퍼스널 컬러", v:color, href:"index.html", label:"얼굴 사진으로 측정하기" },
+  { key:"얼굴형",      v:face,  href:"index.html", label:"얼굴 사진으로 측정하기" },
   { key:"체형",        v:body,  href:"body.html",  label:"체형 측정하기" }
 ];
 $("axes").innerHTML = AX.map(a =>
@@ -291,6 +300,22 @@ function render(){
   $("rx-pat-why").textContent = color.ko + " · " + PT.text;
   $("rx-pat").innerHTML = PT.ex.map(x => "<span>" + x + "</span>").join("");
   $("rx-pat-no").textContent = "피할 패턴 — " + PT.avoid;
+
+  /* 한 줄 요약 — 세 축을 합쳐 "무엇을 사면 되는지" 한 문장으로 */
+  $("keyline").hidden = false;
+  const anchorC = best[0] ? best[0].name : "";
+  $("keyline").innerHTML =
+    '<span class="tag">당신에게 맞는 옷</span>' +
+    '<h3>' + anchorC + ' 계열 · ' + (N.good[0] || "라운드넥") + ' · ' + S.bottom.split(",")[0] + '</h3>' +
+    '<p>' + josa(color.ko, "이라", "라") + ' <b>' + F.text + '</b>' + josa(F.text, "이", "가").slice(F.text.length) +
+    ' 어울리고, 얼굴형이 ' +
+    josa(face.ko, "이라", "라") + ' <b>' + (N.good[0] || "라운드넥") +
+    '</b>이 목선을 가장 잘 받습니다. 체형은 ' + josa(body.ko, "이라", "라") +
+    ' <b>' + S.key + '</b>' + josa(S.key, "이", "가").slice(S.key.length) +
+    ' 관건입니다.</p>' +
+    '<div class="kw">' + [
+      anchorC, N.good[0], S.top.split(",")[0], S.bottom.split(",")[0], F.ex[0], PT.ex[0]
+    ].filter(Boolean).map(x => "<span>" + x + "</span>").join("") + '</div>';
 
   /* 아이템별 실루엣 */
   $("fits").innerHTML = [

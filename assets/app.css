@@ -267,3 +267,17 @@ details.more .method{gap:18px}
 .nav a:hover{background:var(--surface-2); color:var(--ink)}
 .nav a[aria-current="page"]{background:var(--accent-soft); color:var(--ink); font-weight:500}
 @media(max-width:620px){ .nav{margin-left:8px} .nav a{padding:5px 7px; font-size:12px} }
+
+/* ── 얼굴형 결과 · 다음 단계 이동 ─────────────────────────── */
+.faceline{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1px;
+  background:var(--rule); border:1px solid var(--rule); border-radius:3px; margin-top:26px}
+.faceline > div{background:var(--surface); padding:14px 16px}
+.faceline .tag{display:block; margin-bottom:4px}
+.faceline b{font-family:"Gowun Batang",serif; font-size:20px; font-weight:700}
+.faceline p{font-size:13px; color:var(--ink-2); line-height:1.55; margin-top:6px}
+.faceline ul{margin:6px 0 0; padding-left:17px; display:flex; flex-direction:column; gap:4px}
+.faceline li{font-size:13px; color:var(--ink-2); line-height:1.5}
+.advance{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:22px;
+  border:1px solid var(--accent); background:var(--accent-soft); border-radius:3px; padding:12px 15px}
+.advance .msg{font-size:13.5px; margin-right:auto}
+.advance.stopped{border-color:var(--rule-2); background:var(--surface)}
