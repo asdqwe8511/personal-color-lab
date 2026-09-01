@@ -1063,7 +1063,28 @@ $("file").onchange=function(e){
   var f=e.target.files&&e.target.files[0]; if(!f) return;
   var rd=new FileReader(); rd.onload=function(){ stopCam(); loadImage(rd.result); }; rd.readAsDataURL(f);
 };
-$("btn-demo").onclick=function(){ stopCam(); loadImage(demoImage()); toast("합성 표본을 불러왔습니다. 실제 진단은 본인 사진으로 하세요."); };
+/* 예시는 AI 생성 인물 사진을 쓴다. 도형으로 그린 합성 표본보다
+   실제 진단 조건에 가깝고, 피부 화소 검출이 제대로 동작하는지도 보인다.
+   실존 인물이 아니며, 생성에 실패하면 기존 합성 표본으로 되돌아간다. */
+var AI_FACE = "https://pc-lab-image.asdqwe8511.workers.dev";
+function aiFacePrompt(){
+  var who = Math.random() < 0.5 ? "woman" : "man";
+  return "studio portrait photograph of a Korean %s, bare face with no makeup, hair pulled back away from the forehead, neutral relaxed expression, looking straight at the camera, head and shoulders only, even soft daylight from the side, plain light grey background, natural skin texture, sharp focus, no filter, no retouching, no text".replace("%s", who);
+}
+$("btn-demo").onclick=function(){
+  stopCam();
+  var btn=this; btn.disabled=true; var old=btn.textContent; btn.textContent="예시 불러오는 중…";
+  fetch(AI_FACE,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({provider:"workers-ai",prompt:aiFacePrompt(),steps:8})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.images) throw new Error("생성 실패");
+      loadImage(d.images[0]);
+      toast("AI 생성 예시입니다. 실제 진단은 본인 사진으로 하세요.");
+    })
+    .catch(function(){ loadImage(demoImage()); toast("예시를 불러왔습니다. 실제 진단은 본인 사진으로 하세요."); })
+    .then(function(){ btn.disabled=false; btn.textContent=old; });
+};
 
 var stage=$("stage");
 ["dragenter","dragover"].forEach(function(ev){ stage.addEventListener(ev,function(e){e.preventDefault(); stage.classList.add("dragover");}); });

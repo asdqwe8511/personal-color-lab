@@ -357,7 +357,29 @@ function demoFace(){
 }
 
 /* ── 이벤트 ──────────────────────────────────────────────────── */
-$("btn-demo").onclick = () => { stopCam(); demoFace(); };
+/* AI 생성 인물 사진을 쓰면 실제 MediaPipe 검출 경로를 그대로 탄다.
+   합성 도형은 얼굴로 인식되지 않아 랜드마크를 직접 주입해야 했다.
+   실존 인물이 아니며, 실패하면 기존 합성 표본으로 되돌아간다. */
+const AI_FACE = "https://pc-lab-image.asdqwe8511.workers.dev";
+$("btn-demo").onclick = async function(){
+  stopCam();
+  const btn = this, old = btn.textContent;
+  btn.disabled = true; btn.textContent = "예시 불러오는 중…";
+  status("AI 예시 인물을 만드는 중…", true);
+  try{
+    const who = Math.random() < 0.5 ? "woman" : "man";
+    const r = await fetch(AI_FACE, { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ provider:"workers-ai", steps:8,
+        prompt: "studio portrait photograph of a Korean %s, bare face with no makeup, hair pulled back away from the forehead, neutral relaxed expression, looking straight at the camera, head and shoulders only, even soft daylight from the side, plain light grey background, natural skin texture, sharp focus, no filter, no retouching, no text".replace("%s", who) }) });
+    const d = await r.json();
+    if(!d.images) throw new Error("생성 실패");
+    const im = new Image();
+    im.onload = () => setImage(im);
+    im.onerror = () => demoFace();
+    im.src = d.images[0];
+  }catch(e){ demoFace(); }
+  finally{ btn.disabled = false; btn.textContent = old; }
+};
 $("btn-file").onclick = () => $("file").click();
 $("file").onchange = e => loadFile(e.target.files && e.target.files[0]);
 const stage = $("stage");
