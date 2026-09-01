@@ -207,6 +207,7 @@ import { neutrals, NECK, SILHOUETTE, FABRIC, patternFor, outfits, queries, SHOPS
 import { dressedSVG, BOTTOM_TYPE } from "./assets/dress.js";
 import { match as shopMatch, lab as sLab, labOfHex as sLabHex, dE as sDE,
          toHex as sToHex, WORKER } from "./assets/shop.js";
+import { recolor, verify } from "./assets/recolor.js";
 
 const $ = id => document.getElementById(id);
 function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show");
@@ -342,21 +343,37 @@ function render(){
       if (!d.images) throw new Error(d.error || "생성 실패");
       const url = d.images[0];
       b.remove();
-      const img = new Image(); img.src = url; img.alt = o.name + " 착장 이미지";
+      note.textContent = "색 보정 중…";
+
+      /* 생성 모델은 색 지시를 잘 못 따른다. 생성된 이미지의 옷 영역을
+         처방 hex 로 다시 칠한다 — 명암은 남기고 색만 옮긴다. */
+      const src = await new Promise(r => { const i = new Image();
+        i.crossOrigin = "anonymous"; i.onload = () => r(i); i.onerror = () => r(null); i.src = url; });
+      const REGIONS = [
+        { y0:0.16, y1:0.42, hex:o.items[0].c.hex },   // 상의
+        { y0:0.46, y1:0.86, hex:o.items[1].c.hex }    // 하의
+      ];
+      let shown = url, after = null, before = null;
+      if (src) {
+        const beforeM = verify(
+          (() => { const cc = document.createElement("canvas");
+                   cc.width = src.naturalWidth; cc.height = src.naturalHeight;
+                   cc.getContext("2d").drawImage(src, 0, 0); return cc; })(), REGIONS);
+        const res = recolor(src, REGIONS);
+        if (res) { shown = res.dataUrl; after = verify(res.canvas, REGIONS); before = beforeM; }
+      }
+      const img = new Image(); img.src = shown; img.alt = o.name + " 착장 이미지";
       wrap.insertBefore(img, note);
-      /* 생성된 옷 색을 재서 처방과 얼마나 다른지 그대로 보여준다 */
-      const top = await measureGarment(url, 0.20, 0.34);
-      const bot = await measureGarment(url, 0.50, 0.70);
-      const rows = [];
-      if (top) rows.push(["상의", sToHex(...top), o.items[0].c.hex]);
-      if (bot) rows.push(["하의", sToHex(...bot), o.items[1].c.hex]);
-      note.innerHTML = rows.length
-        ? rows.map(([k, got, want]) =>
-            '<span class="de"><i style="background:' + want + '"></i>→<i style="background:' + got + '"></i>' +
-            k + ' ΔE ' + sDE(sLab(...[1,3,5].map(i=>parseInt(got.substr(i,2),16))), sLabHex(want)).toFixed(1) +
-            '</span>').join("")
-          + '<span style="display:block;margin-top:4px">AI 이미지는 색이 어긋납니다. 정확한 색은 위 도식과 색상 코드입니다.</span>'
-        : "AI 생성 이미지 — 색은 근사치입니다.";
+
+      const LAB = ["상의", "하의"];
+      note.innerHTML = after
+        ? after.map((a, i) => {
+            const bfr = before && before[i] ? before[i].dE : null;
+            return '<span class="de"><i style="background:' + a.hex + '"></i>' +
+              LAB[i] + ' ΔE ' + (bfr != null ? bfr + " → " : "") + '<b>' + a.dE + '</b></span>';
+          }).join("") +
+          '<span style="display:block;margin-top:4px">생성 이미지의 옷 색을 처방 hex 로 보정했습니다.</span>'
+        : "AI 생성 이미지 — 색 보정에 실패해 원본입니다.";
     } catch (err) {
       note.textContent = "생성 실패: " + err.message;
       b.disabled = false;

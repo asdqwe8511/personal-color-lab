@@ -11,7 +11,7 @@
 /* Workers AI 이미지 모델. 계정에 포함돼 있어 별도 키가 필요 없다. */
 const WAI_TXT2IMG = "@cf/black-forest-labs/flux-1-schnell";
 const WAI_IMG2IMG = "@cf/runwayml/stable-diffusion-v1-5-img2img";
-const GEMINI_MODEL = "gemini-2.5-flash-image";
+const GEMINI_MODEL = "gemini-3-pro-image";   // 2.5-flash-image 는 구버전
 const GEMINI_URL = m => `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`;
 
 function cors(origin, allowed) {
