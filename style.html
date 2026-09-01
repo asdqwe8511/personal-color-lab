@@ -46,16 +46,12 @@
 
 .outfits{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px}
 .outfit{border:1px solid var(--rule); border-radius:3px; background:var(--surface); overflow:hidden}
-.outfit .figure{background:var(--surface-2); border-bottom:1px solid var(--rule); padding:6px 0}
-.aiwrap{padding:9px 10px; border-bottom:1px solid var(--rule); display:flex;
-  flex-direction:column; gap:6px; background:var(--surface-2)}
-.aiwrap .btn{justify-content:center; font-size:12.5px; padding:6px 10px}
-.aiwrap .ai-note{font-size:11px; color:var(--ink-3); line-height:1.45; text-align:center}
-.aiwrap img{width:100%; display:block; border-radius:2px}
-.aiwrap .de{display:flex; gap:5px; align-items:center; justify-content:center;
-  font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--ink-3)}
-.aiwrap .de i{width:11px; height:11px; border-radius:2px; border:1px solid var(--rule-2)}
-.outfit .figure svg{display:block; width:100%; height:auto; max-height:300px}
+.outfit .shot{background:var(--surface-2); border-bottom:1px solid var(--rule);
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center; overflow:hidden}
+.outfit .shot img{width:100%; height:100%; object-fit:cover; display:block}
+.outfit .shot .ph{font-size:12px; color:var(--ink-3)}
+.outfit dd i{display:inline-block; width:10px; height:10px; border-radius:2px;
+  border:1px solid var(--rule-2); vertical-align:-1px; margin-right:5px}
 .outfit .look{display:flex; height:96px}
 .outfit .look i{flex:1; display:block}
 .outfit .look i.pt{flex:0 0 20%}
@@ -204,10 +200,9 @@
 <script type="module">
 import { neutrals, NECK, SILHOUETTE, FABRIC, patternFor, outfits, queries, SHOPS,
          outfitPrompt } from "./assets/style.js";
-import { dressedSVG, BOTTOM_TYPE } from "./assets/dress.js";
+import { BOTTOM_TYPE } from "./assets/dress.js";
 import { match as shopMatch, lab as sLab, labOfHex as sLabHex, dE as sDE,
          toHex as sToHex, WORKER } from "./assets/shop.js";
-import { recolor, verify } from "./assets/recolor.js";
 
 const $ = id => document.getElementById(id);
 function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show");
@@ -291,94 +286,33 @@ function render(){
   const OUTFITS = outfits(best, season);
   $("outfits").innerHTML = OUTFITS.map((o, oi) =>
     '<div class="outfit">' +
-    (bm ? '<div class="figure"><svg viewBox="0 0 200 420" role="img" aria-label="' + o.name +
-      ' 착장">' + dressedSVG(bm, o, Object.assign({ width:200, height:420 }, dressOpt)) + '</svg></div>'
-        : '<div class="look">' + o.items.map(it => '<i class="' + (it.role === "포인트" ? "pt" : "") +
-          '" style="background:' + it.c.hex + '"></i>').join("") + '</div>') +
-    '<div class="aiwrap" data-i="' + oi + '"><button class="btn ai-go" data-i="' + oi + '">착장 이미지 생성</button>' +
-    '<span class="ai-note"></span></div>' +
+    '<div class="shot" data-i="' + oi + '"><div class="ph">불러오는 중…</div></div>' +
     '<div class="body"><h4>' + o.name + '</h4><p class="why">' + o.why + '</p><dl>' +
-    o.items.map(it => "<dt>" + it.role + "</dt><dd>" + it.c.name + " " + it.c.hex.toUpperCase() + "</dd>").join("") +
+    o.items.map(it => "<dt>" + it.role + "</dt><dd><i style=\"background:" + it.c.hex +
+      "\"></i>" + it.c.name + " " + it.c.hex.toUpperCase() + "</dd>").join("") +
     "</dl></div></div>").join("");
 
-  /* 착장 이미지 — 각자의 팔레트 색으로 그때그때 만든다.
-     고정 이미지를 박으면 남의 색 사진이 뜬다. Workers AI 라 비용은 0원. */
+  /* 착장 이미지 — 내 체형·컬러에 가까운 느낌을 보여주는 용도.
+     픽셀 단위로 정확할 필요는 없다. 정확한 색은 색상 코드가 맡는다. */
   const dressOptAI = { neckline: N.good[0], bodyKey: body.key, m: body.m || {},
                        bottom: BOTTOM_TYPE[body.key], gender: body.system === "men" ? "men" : "women" };
-  async function measureGarment(url, y0, y1) {
-    const im = await new Promise(r => { const i = new Image();
-      i.crossOrigin = "anonymous"; i.onload = () => r(i); i.onerror = () => r(null); i.src = url; });
-    if (!im) return null;
-    const c = document.createElement("canvas"); c.width = im.width; c.height = im.height;
-    const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(im, 0, 0);
-    let d; try { d = g.getImageData(0, 0, im.width, im.height).data; } catch (e) { return null; }
-    const W = im.width, H = im.height;
-    const corner = [d[0], d[1], d[2]], bgL = sLab(...corner);
-    const px = [];
-    for (let y = Math.round(H * y0); y < H * y1; y += 2)
-      for (let x = Math.round(W * 0.3); x < W * 0.7; x += 2) {
-        const i = (y * W + x) * 4, p = [d[i], d[i + 1], d[i + 2]];
-        if (sDE(sLab(...p), bgL) < 22) continue;          // 배경 제외
-        px.push(p);
+
+  (async () => {
+    for (let i = 0; i < OUTFITS.length; i++) {
+      const box = document.querySelector('.shot[data-i="' + i + '"]');
+      if (!box) continue;
+      try {
+        const r = await fetch(WORKER, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider: "workers-ai",
+            prompt: outfitPrompt(OUTFITS[i], dressOptAI), steps: 8 }) });
+        const d = await r.json();
+        if (!d.images) throw new Error(d.error || "생성 실패");
+        box.innerHTML = '<img alt="' + OUTFITS[i].name + ' 착장 예시" src="' + d.images[0] + '">';
+      } catch (e) {
+        box.innerHTML = '<div class="ph">이미지를 불러오지 못했습니다</div>';
       }
-    if (px.length < 60) return null;
-    px.sort((a, b) => { const la = sLab(...a), lb = sLab(...b);
-      return Math.hypot(lb[1], lb[2]) - Math.hypot(la[1], la[2]); });
-    const core = px.slice(0, Math.floor(px.length * 0.5));
-    return [0, 1, 2].map(k => { const v = core.map(q => q[k]).sort((a, b) => a - b);
-      return v[Math.floor(v.length / 2)]; });
-  }
-
-  document.addEventListener("click", async e => {
-    const b = e.target.closest ? e.target.closest(".ai-go") : null;
-    if (!b) return;
-    const oi = +b.dataset.i, o = OUTFITS[oi];
-    const wrap = b.closest(".aiwrap"), note = wrap.querySelector(".ai-note");
-    b.disabled = true; note.textContent = "생성 중… 5~10초";
-    try {
-      const prompt = outfitPrompt(o, dressOptAI);
-      const r = await fetch(WORKER, { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider: "workers-ai", prompt, steps: 8 }) });
-      const d = await r.json();
-      if (!d.images) throw new Error(d.error || "생성 실패");
-      const url = d.images[0];
-      b.remove();
-      note.textContent = "색 보정 중…";
-
-      /* 생성 모델은 색 지시를 잘 못 따른다. 생성된 이미지의 옷 영역을
-         처방 hex 로 다시 칠한다 — 명암은 남기고 색만 옮긴다. */
-      const src = await new Promise(r => { const i = new Image();
-        i.crossOrigin = "anonymous"; i.onload = () => r(i); i.onerror = () => r(null); i.src = url; });
-      const REGIONS = [
-        { y0:0.16, y1:0.42, hex:o.items[0].c.hex },   // 상의
-        { y0:0.46, y1:0.86, hex:o.items[1].c.hex }    // 하의
-      ];
-      let shown = url, after = null, before = null;
-      if (src) {
-        const beforeM = verify(
-          (() => { const cc = document.createElement("canvas");
-                   cc.width = src.naturalWidth; cc.height = src.naturalHeight;
-                   cc.getContext("2d").drawImage(src, 0, 0); return cc; })(), REGIONS);
-        const res = recolor(src, REGIONS);
-        if (res) { shown = res.dataUrl; after = verify(res.canvas, REGIONS); before = beforeM; }
-      }
-      const img = new Image(); img.src = shown; img.alt = o.name + " 착장 이미지";
-      wrap.insertBefore(img, note);
-
-      const LAB = ["상의", "하의"];
-      note.innerHTML = after
-        ? after.map((a, i) => {
-            const bfr = before && before[i] ? before[i].dE : null;
-            return '<span class="de"><i style="background:' + a.hex + '"></i>' +
-              LAB[i] + ' ΔE ' + (bfr != null ? bfr + " → " : "") + '<b>' + a.dE + '</b></span>';
-          }).join("") +
-          '<span style="display:block;margin-top:4px">실루엣·목선·핏은 측정값대로입니다. <b>색은 참고용</b>이며 정확한 색은 위 색상 코드와 아래 상품 카드입니다.</span>'
-        : '<span style="display:block">실루엣·목선·핏은 측정값대로입니다. <b>색은 참고용</b>입니다.</span>';
-    } catch (err) {
-      note.textContent = "생성 실패: " + err.message;
-      b.disabled = false;
     }
-  });
+  })();
 
   /* 실제 상품 — 카테고리로 검색하고 색은 이미지에서 잰다 */
   const neck = (N.good[0] || "").replace("대부분의 목선", "");
