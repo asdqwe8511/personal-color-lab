@@ -44,40 +44,61 @@ function isSkin(r, g, b) {
   return Cr >= 130 && Cr <= 180 && Cb >= 75 && Cb <= 135;
 }
 
+/* 배경을 색 거리만으로 판단하면 안 된다. 흰 상의와 옅은 회색 배경은
+ * 색이 비슷해서 옷이 배경으로 분류된다. 가장자리에서 번져 들어가며
+ * '이어져 있는' 영역만 배경으로 본다 — 옷은 인물 안쪽에 갇혀 있어 안 닿는다. */
+function backgroundMask(d, W, H, bgLab, tol) {
+  const bg = new Uint8Array(W * H);
+  const q = new Int32Array(W * H);
+  let head = 0, tail = 0;
+  const push = i => { if (!bg[i]) { bg[i] = 1; q[tail++] = i; } };
+  for (let x = 0; x < W; x++) { push(x); push((H - 1) * W + x); }
+  for (let y = 0; y < H; y++) { push(y * W); push(y * W + W - 1); }
+  while (head < tail) {
+    const i = q[head++], x = i % W, y = (i / W) | 0;
+    const nb = [x > 0 ? i - 1 : -1, x < W - 1 ? i + 1 : -1,
+                y > 0 ? i - W : -1, y < H - 1 ? i + W : -1];
+    for (const j of nb) {
+      if (j < 0 || bg[j]) continue;
+      const k = j * 4;
+      if (dE(rgb2lab(d[k], d[k + 1], d[k + 2]), bgLab) < tol) push(j);
+    }
+  }
+  return bg;
+}
+
 /* 인물 영역의 세로 범위를 찾는다. 구도가 매번 달라 고정 좌표는 못 쓴다. */
-function figureBox(d, W, H, bgLab) {
+function figureBox(bg, W, H) {
   let top = H, bot = 0;
   for (let y = 0; y < H; y += 2) {
     let cnt = 0;
-    for (let x = (W * 0.2) | 0; x < W * 0.8; x += 3) {
-      const i = (y * W + x) * 4;
-      if (dE(rgb2lab(d[i], d[i + 1], d[i + 2]), bgLab) > 26) cnt++;
-      if (cnt > 6) break;
-    }
+    for (let x = (W * 0.2) | 0; x < W * 0.8; x += 3) if (!bg[y * W + x] && ++cnt > 6) break;
     if (cnt > 6) { if (y < top) top = y; bot = y; }
   }
   return top < bot ? { top, bot } : { top: 0, bot: H - 1 };
 }
 
 /* 한 구역에서 옷으로 볼 화소들의 대표색을 찾는다 */
-function dominant(d, W, y0, y1, x0, x1, bgLab) {
+function dominant(d, W, bg, y0, y1, x0, x1) {
   const bins = new Map();
+  let total = 0;
   for (let y = y0 | 0; y < y1; y++) {
     for (let x = x0 | 0; x < x1; x++) {
-      const i = (y * W + x) * 4;
-      const r = d[i], g = d[i + 1], b = d[i + 2];
-      if (dE(rgb2lab(r, g, b), bgLab) < 26) continue;   // 배경
+      const p = y * W + x;
+      if (bg[p]) continue;                              // 배경(가장자리에서 이어진 곳)
+      const i = p * 4, r = d[i], g = d[i + 1], b = d[i + 2];
       if (isSkin(r, g, b)) continue;                    // 피부
-      const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+      if (Math.max(r, g, b) < 30) continue;             // 머리카락·신발 그림자
+      const key = ((r >> 5) << 10) | ((g >> 5) << 5) | (b >> 5);   // 5단계로 거칠게
       const v = bins.get(key) || [0, 0, 0, 0];
       v[0] += r; v[1] += g; v[2] += b; v[3]++;
-      bins.set(key, v);
+      bins.set(key, v); total++;
     }
   }
   let best = null;
   for (const v of bins.values()) if (!best || v[3] > best[3]) best = v;
-  if (!best || best[3] < 60) return null;
-  return { rgb: [best[0] / best[3], best[1] / best[3], best[2] / best[3]], n: best[3] };
+  if (!best || best[3] < 40) return null;
+  return { rgb: [best[0] / best[3], best[1] / best[3], best[2] / best[3]], n: best[3], total };
 }
 
 /* ── 재색상 ──────────────────────────────────────────────────
@@ -99,14 +120,15 @@ function recolor(img, regions, opt) {
   catch (e) { return null; }            // CORS 로 막히면 포기
   const d = im.data;
   const bgLab = rgb2lab(d[0], d[1], d[2]);
-  const box = figureBox(d, W, H, bgLab);
+  const bg = backgroundMask(d, W, H, bgLab, opt.bgTol || 20);
+  const box = figureBox(bg, W, H);
   const FH = box.bot - box.top;
   const x0 = (W * 0.22) | 0, x1 = (W * 0.78) | 0;
   const report = [];
 
   for (const reg of regions) {
     const y0 = box.top + FH * reg.y0, y1 = box.top + FH * reg.y1;
-    const dom = dominant(d, W, y0, y1, x0, x1, bgLab);
+    const dom = dominant(d, W, bg, y0, y1, x0, x1);
     if (!dom) { report.push({ hex: reg.hex, ok: false }); continue; }
     const domLab = rgb2lab(...dom.rgb);
     const tgt = rgb2lab(...hex2rgb(reg.hex));
@@ -114,11 +136,11 @@ function recolor(img, regions, opt) {
 
     for (let y = y0 | 0; y < y1; y++) {
       for (let x = x0; x < x1; x++) {
-        const i = (y * W + x) * 4;
-        const r = d[i], gg = d[i + 1], b = d[i + 2];
+        const p = y * W + x;
+        if (bg[p]) continue;
+        const i = p * 4, r = d[i], gg = d[i + 1], b = d[i + 2];
         if (isSkin(r, gg, b)) continue;
         const L = rgb2lab(r, gg, b);
-        if (dE(L, bgLab) < 26) continue;
         const dist = dE(L, domLab);
         if (dist > TOL) continue;
         const w = 1 - dist / TOL;                       // 가장자리는 약하게
@@ -144,11 +166,12 @@ function verify(canvas, regions) {
   const g = canvas.getContext("2d", { willReadFrequently: true });
   const d = g.getImageData(0, 0, W, H).data;
   const bgLab = rgb2lab(d[0], d[1], d[2]);
-  const box = figureBox(d, W, H, bgLab);
+  const bg = backgroundMask(d, W, H, bgLab, 20);
+  const box = figureBox(bg, W, H);
   const FH = box.bot - box.top;
   return regions.map(reg => {
-    const dom = dominant(d, W, box.top + FH * reg.y0, box.top + FH * reg.y1,
-                         (W * 0.22) | 0, (W * 0.78) | 0, bgLab);
+    const dom = dominant(d, W, bg, box.top + FH * reg.y0, box.top + FH * reg.y1,
+                         (W * 0.22) | 0, (W * 0.78) | 0);
     if (!dom) return { hex: reg.hex, dE: null };
     return { hex: reg.hex, got: toHex(...dom.rgb),
              dE: +dE(rgb2lab(...dom.rgb), rgb2lab(...hex2rgb(reg.hex))).toFixed(1) };
