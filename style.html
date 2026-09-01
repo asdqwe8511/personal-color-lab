@@ -303,7 +303,7 @@ function render(){
 
   /* 착장 이미지 — 각자의 팔레트 색으로 그때그때 만든다.
      고정 이미지를 박으면 남의 색 사진이 뜬다. Workers AI 라 비용은 0원. */
-  const dressOptAI = { neckline: N.good[0], bodyKey: body.key,
+  const dressOptAI = { neckline: N.good[0], bodyKey: body.key, m: body.m || {},
                        bottom: BOTTOM_TYPE[body.key], gender: body.system === "men" ? "men" : "women" };
   async function measureGarment(url, y0, y1) {
     const im = await new Promise(r => { const i = new Image();
@@ -372,8 +372,8 @@ function render(){
             return '<span class="de"><i style="background:' + a.hex + '"></i>' +
               LAB[i] + ' ΔE ' + (bfr != null ? bfr + " → " : "") + '<b>' + a.dE + '</b></span>';
           }).join("") +
-          '<span style="display:block;margin-top:4px">생성 이미지의 옷 색을 처방 hex 로 보정했습니다.</span>'
-        : "AI 생성 이미지 — 색 보정에 실패해 원본입니다.";
+          '<span style="display:block;margin-top:4px">실루엣·목선·핏은 측정값대로입니다. <b>색은 참고용</b>이며 정확한 색은 위 색상 코드와 아래 상품 카드입니다.</span>'
+        : '<span style="display:block">실루엣·목선·핏은 측정값대로입니다. <b>색은 참고용</b>입니다.</span>';
     } catch (err) {
       note.textContent = "생성 실패: " + err.message;
       b.disabled = false;

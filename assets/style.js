@@ -192,23 +192,49 @@ const EN_BOTTOM = {
   straight: "straight-leg trousers", wide: "wide-leg trousers",
   bootcut: "bootcut trousers", skinny: "slim trousers", aline: "a-line skirt"
 };
+/* 실측값을 구조화해 넣으면 실루엣이 실제로 따라온다 — 단순 프롬프트와
+ * 비교했을 때 와이드 팬츠·스쿱넥·팔 위치가 지시대로 나오는 것을 확인했다.
+ * 다만 색은 여전히 따라오지 않는다. 색의 정답은 팔레트 hex 와 상품 카드다. */
 function outfitPrompt(outfit, opt) {
   opt = opt || {};
+  const m = opt.m || {};
   const top = enColor(outfit.items[0].c.hex);
   const bot = enColor(outfit.items[1].c.hex);
   const neck = EN_NECK[opt.neckline] || "round neck";
   const bottom = EN_BOTTOM[opt.bottom] || "straight-leg trousers";
-  const bodyDesc = EN_BODY[opt.bodyKey] || "";
   const who = opt.gender === "men" ? "man" : "woman";
+
+  /* 치수를 문장으로 옮긴다. 모델이 cm 를 재현하진 못하지만
+     '어깨가 엉덩이보다 좁다' 같은 관계는 실루엣에 반영된다. */
+  const body = [];
+  if (m.shoulder && m.hip) {
+    const r = m.shoulder / (m.hip / 2.74);
+    body.push(r > 1.18 ? "shoulders distinctly broader than the hips"
+            : r < 1.02 ? "shoulders noticeably narrower than the hips"
+            : "shoulders and hips of similar width");
+    body.push("shoulder width " + m.shoulder + "cm, hip circumference " + m.hip + "cm");
+  }
+  if (m.waist && m.hip) {
+    const w = m.waist / m.hip;
+    body.push(w < 0.75 ? "clearly indented waist"
+            : w > 0.88 ? "softly defined waistline"
+            : "moderately defined waist");
+    body.push("waist " + m.waist + "cm");
+  }
+  if (m.height) body.push("height " + m.height + "cm");
+  if (EN_BODY[opt.bodyKey]) body.push(EN_BODY[opt.bodyKey]);
+
   return [
-    "editorial full-body fashion photograph of a Korean " + who,
-    "standing straight facing camera",
-    "wearing a " + top + " " + neck + " fine-knit top",
-    "and " + bot + " " + bottom,
-    bodyDesc,
-    "plain pale grey seamless studio backdrop",
-    "soft even lighting, natural realistic proportions, sharp focus, no text"
-  ].filter(Boolean).join(", ");
+    "editorial full-body fashion photograph, single Korean " + who + ", front view",
+    "standing straight, arms relaxed away from the body so the waistline is visible",
+    "BODY: " + body.join(", "),
+    "TOP: " + top.toUpperCase() + " colored fine-knit top, " + top + " hue, " +
+      neck + ", hem ending at the high hip",
+    "BOTTOM: " + bot.toUpperCase() + " " + bottom + ", full length",
+    "plain pale grey seamless backdrop, soft even studio lighting",
+    "natural realistic proportions, full body visible from head to shoes",
+    "sharp focus, no text, no logo"
+  ].join(". ");
 }
 
 /* ── 쇼핑 검색어 ─────────────────────────────────────────────
